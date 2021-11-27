@@ -3,7 +3,9 @@
 
 struct measurement{
     int volt;
-    int ampere;
+    int ampere1;
+    int ampere2;
+    int ampere3;
     int timestamp;
 };
 #endif
