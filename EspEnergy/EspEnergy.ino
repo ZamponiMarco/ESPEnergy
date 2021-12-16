@@ -1,8 +1,4 @@
-#include <WiFi.h>
-#include <WiFiClient.h>
-#include <WebServer.h>
-#include <ESPmDNS.h>
-
+#include "CaptivePortal.h"
 #include "measurement.h"
 
 #define VOLT_PIN 35
@@ -10,55 +6,18 @@
 #define AMPERE_TWO_PIN 33
 #define AMPERE_THREE_PIN 25
 
-WebServer server(80);
-
-const char* ssid = "POCO M3";
-const char* password = "culocane";
-
 TimerHandle_t timer;
 QueueHandle_t queue;
 TaskHandle_t taskConsumer;
 BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-boolean startWebServer() {
-  Serial.println("Starting web server...");
-
-  server.on("/", handleRoot);
-
-  server.begin();
-  Serial.println("HTTP server started");
-}
-
-void handleRoot() {
-  server.send(200, "text/plain", "hello from esp32!");
-}
-
+static Configuration* conf = new Configuration();
 
 void setup()
 {
   Serial.begin(115200);
-
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
-  if (MDNS.begin("esp32")) {
-    Serial.println("MDNS responder started");
-  }
-
-  Serial.println("Starting Program");
-
-  Serial.println("Configuration file doesn't exists\nStarting captive portal...");
-  startWebServer();
+  startWebServer(conf);
+  Serial.println(conf->ssid);
 
   /*
 
@@ -93,8 +52,6 @@ void setup()
 
 void loop()
 {
-  server.handleClient();
-  delay(2);//allow the cpu to switch to other tasks
 }
 
 
