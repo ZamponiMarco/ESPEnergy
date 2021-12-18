@@ -1,4 +1,4 @@
-#include "CaptivePortal.h"
+#include "captive_portal.h"
 #include "measurement.h"
 
 #define VOLT_PIN 35
@@ -16,17 +16,15 @@ static Configuration* conf = new Configuration();
 void setup()
 {
   Serial.begin(115200);
-  startWebServer(conf);
+  configureDevice(conf);
   Serial.println(conf->ssid);
-
-  /*
 
     pinMode(VOLT_PIN, INPUT);
     pinMode(AMPERE_ONE_PIN, INPUT);
     pinMode(AMPERE_TWO_PIN, INPUT);
     pinMode(AMPERE_THREE_PIN, INPUT);
 
-    queue = xQueueCreate(10, sizeof(measurement));
+    queue = xQueueCreate(10, sizeof(Measurement));
 
     if (queue == NULL) {
     Serial.println("Couldn't create Queue");
@@ -47,21 +45,18 @@ void setup()
     Serial.println("Couldn't create Task");
     ESP.restart();
     }
-  */
 }
 
 void loop()
 {
 }
 
-
-/*
 void readTask(TimerHandle_t xTimer) {
   int volt = analogRead(VOLT_PIN);
   int ampere_one = analogRead(AMPERE_ONE_PIN);
   int ampere_two = analogRead(AMPERE_TWO_PIN);
   int ampere_three = analogRead(AMPERE_THREE_PIN);
-  struct measurement misura = {volt, ampere_one, ampere_two, ampere_three, 0};
+  Measurement misura = {volt, ampere_one, ampere_two, ampere_three, 0};
   if (xQueueSendFromISR(queue, &misura, &xHigherPriorityTaskWoken )) {
     Serial.println("Object sent");
   } else {
@@ -72,7 +67,7 @@ void readTask(TimerHandle_t xTimer) {
 void valueConsumer(void *pvParameters)
 {
   configASSERT( ( ( uint32_t ) pvParameters ) == 1 );
-  struct measurement received;
+  Measurement received;
   for (;;)
   {
     if (xQueueReceive(queue, &received, ( TickType_t ) 1000) == pdPASS)
@@ -94,4 +89,35 @@ void valueConsumer(void *pvParameters)
   }
 }
 
+/*
+void sendMqttData(char* topic, consumption consumi[], int *dim){
+  char buffer0[30];
+  String payload;
+  int i=0;
+  client.connect(clientID);
+  
+  Serial.println("Invio vettori in corso...");
+  for(int j=0; j<*dim; j++) {
+    if(consumi[j].sent==0){
+      dtostrf(consumi[j].w,4,0,buffer0);
+      payload=getTimestamp(consumi[j].t)+"_"+buffer0;
+      payload.toCharArray(buffer0,30);
+      if (client.connected()) {
+        client.publish(topic, buffer0);
+        Serial.print("MQTT DATA: ");
+        Serial.print(topic);
+        Serial.print(" -> ");
+        Serial.println(payload);
+        delay(100);
+      }else {
+        Serial.println("Non riesco a ricollegarmi.");
+        if(sdcard_inserted){
+          writeConsumptionToFile(topic, buffer0); 
+        }
+      }
+      consumption1[j].sent=true;
+     }
+    }
+    *dim=0;
+}
 */

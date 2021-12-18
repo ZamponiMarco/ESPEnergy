@@ -8,4 +8,5 @@ typedef struct {
   int ampere3;
   int timestamp;
 } Measurement;
+
 #endif
