@@ -1,3 +1,7 @@
+#include <PubSubClient.h>
+#include <WiFiClient.h>
+#include <WiFi.h>
+
 #include "captive_portal.h"
 #include "measurement.h"
 
@@ -13,38 +17,73 @@ BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
 static Configuration* conf = new Configuration();
 
+const char* ssid = "POCO M3";
+const char* password = "culocane";
+
+char *clientID = "Building0Test";
+char* topic = "test";
+char* server = "192.168.43.197";
+WiFiClient espClient;
+PubSubClient client(espClient);
+
 void setup()
 {
   Serial.begin(115200);
-  configureDevice(conf);
-  Serial.println(conf->ssid);
 
-    pinMode(VOLT_PIN, INPUT);
-    pinMode(AMPERE_ONE_PIN, INPUT);
-    pinMode(AMPERE_TWO_PIN, INPUT);
-    pinMode(AMPERE_THREE_PIN, INPUT);
+  Serial.println("Connecting");
 
-    queue = xQueueCreate(10, sizeof(Measurement));
+  WiFi.begin(ssid, password);
 
-    if (queue == NULL) {
-    Serial.println("Couldn't create Queue");
-    ESP.restart();
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("Connected");
+
+  client.setServer(server, 1883);
+  if (client.connect(clientID)) {
+    Serial.println("Connected to MQTT broker");
+    Serial.print("Topic is: ");
+    Serial.println(topic);
+    
+    if (client.publish(topic, "hello from ESP8266")) {
+      Serial.println("Publish ok");
     }
+    else {
+      Serial.println("Publish failed");
+    }
+  }
+  else {
+    Serial.println("MQTT connect failed");
+    Serial.println("Will reset and try again...");
+    abort();
+  }
 
-    timer = xTimerCreate("Timer", 1000, pdTRUE, (void *)0, readTask);
+  //configureDevice(conf);
 
-    if (timer == NULL) {
+  pinMode(VOLT_PIN, INPUT);
+  pinMode(AMPERE_ONE_PIN, INPUT);
+  pinMode(AMPERE_TWO_PIN, INPUT);
+  pinMode(AMPERE_THREE_PIN, INPUT);
+  
+  queue = xQueueCreate(10, sizeof(Measurement));
+  if (queue == NULL) {
+  Serial.println("Couldn't create Queue");
+  ESP.restart();
+  }
+  timer = xTimerCreate("Timer", 5000, pdTRUE, (void *)0, readTask);
+  if (timer == NULL) {
     Serial.println("Couldn't create Timer");
     ESP.restart();
-    }
+  }
+  xTimerStartFromISR(timer, (BaseType_t*)0);
 
-    xTimerStartFromISR(timer, (BaseType_t*)0);
-    xTaskCreate(valueConsumer, "consumer", 1024, ( void * ) 1, tskIDLE_PRIORITY, &taskConsumer);
-
-    if (taskConsumer == NULL) {
+  xTaskCreate(valueConsumer, "consumer", 4096, ( void * ) 1, tskIDLE_PRIORITY, &taskConsumer);
+  if (taskConsumer == NULL) {
     Serial.println("Couldn't create Task");
     ESP.restart();
-    }
+  }
 }
 
 void loop()
@@ -72,52 +111,12 @@ void valueConsumer(void *pvParameters)
   {
     if (xQueueReceive(queue, &received, ( TickType_t ) 1000) == pdPASS)
     {
-      Serial.print("Object received: {volt: ");
-      Serial.print(received.volt);
-      Serial.print(", ampere1: ");
-      Serial.print(received.ampere1);
-      Serial.print(", ampere2: ");
-      Serial.print(received.ampere2);
-      Serial.print(", ampere3: ");
-      Serial.print(received.ampere3);
-      Serial.print(", timestamp: ");
-      Serial.print(received.timestamp);
-      Serial.println("}");
+      sendMqttData();
     } else {
       Serial.println("queue empty");
     }
   }
 }
 
-/*
-void sendMqttData(char* topic, consumption consumi[], int *dim){
-  char buffer0[30];
-  String payload;
-  int i=0;
-  client.connect(clientID);
-  
-  Serial.println("Invio vettori in corso...");
-  for(int j=0; j<*dim; j++) {
-    if(consumi[j].sent==0){
-      dtostrf(consumi[j].w,4,0,buffer0);
-      payload=getTimestamp(consumi[j].t)+"_"+buffer0;
-      payload.toCharArray(buffer0,30);
-      if (client.connected()) {
-        client.publish(topic, buffer0);
-        Serial.print("MQTT DATA: ");
-        Serial.print(topic);
-        Serial.print(" -> ");
-        Serial.println(payload);
-        delay(100);
-      }else {
-        Serial.println("Non riesco a ricollegarmi.");
-        if(sdcard_inserted){
-          writeConsumptionToFile(topic, buffer0); 
-        }
-      }
-      consumption1[j].sent=true;
-     }
-    }
-    *dim=0;
+void sendMqttData(){
 }
-*/

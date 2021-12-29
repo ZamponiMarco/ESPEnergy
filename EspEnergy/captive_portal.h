@@ -2,7 +2,6 @@
 #define captiveportal_h
 
 #include <WiFi.h>
-#include <WiFiClient.h>
 #include <WebServer.h>
 #include "esp_wpa2.h" //wpa2 library for connections to Enterprise networks
 
