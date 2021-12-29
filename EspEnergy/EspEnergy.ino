@@ -1,8 +1,9 @@
-#include <PubSubClient.h>
+// #include <PubSubClient.h>
 #include <WiFiClient.h>
 #include <WiFi.h>
 
 #include "captive_portal.h"
+#include "microSdCard.h"
 #include "measurement.h"
 
 #define VOLT_PIN 35
@@ -24,7 +25,7 @@ char *clientID = "Building0Test";
 char* topic = "test";
 char* server = "192.168.43.197";
 WiFiClient espClient;
-PubSubClient client(espClient);
+//PubSubClient client(espClient);
 
 void setup()
 {
@@ -32,36 +33,37 @@ void setup()
 
   Serial.println("Connecting");
 
-  WiFi.begin(ssid, password);
+  //WiFi.begin(ssid, password);
 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
+  // while (WiFi.status() != WL_CONNECTED) {
+  //   delay(500);
+  //   Serial.print(".");
+  // }
 
-  Serial.println("Connected");
+  // Serial.println("Connected");
 
-  client.setServer(server, 1883);
-  if (client.connect(clientID)) {
-    Serial.println("Connected to MQTT broker");
-    Serial.print("Topic is: ");
-    Serial.println(topic);
+  // client.setServer(server, 1883);
+  // if (client.connect(clientID)) {
+  //   Serial.println("Connected to MQTT broker");
+  //   Serial.print("Topic is: ");
+  //   Serial.println(topic);
     
-    if (client.publish(topic, "hello from ESP8266")) {
-      Serial.println("Publish ok");
-    }
-    else {
-      Serial.println("Publish failed");
-    }
-  }
-  else {
-    Serial.println("MQTT connect failed");
-    Serial.println("Will reset and try again...");
-    abort();
-  }
+  //   if (client.publish(topic, "hello from ESP8266")) {
+  //     Serial.println("Publish ok");
+  //   }
+  //   else {
+  //     Serial.println("Publish failed");
+  //   }
+  // }
+  // else {
+  //   Serial.println("MQTT connect failed");
+  //   Serial.println("Will reset and try again...");
+  //   abort();
+  // }
 
-  //configureDevice(conf);
-
+  configureDevice(conf);
+  Serial.println(conf->password);
+  writeToSd(conf->password);
   pinMode(VOLT_PIN, INPUT);
   pinMode(AMPERE_ONE_PIN, INPUT);
   pinMode(AMPERE_TWO_PIN, INPUT);
@@ -79,11 +81,11 @@ void setup()
   }
   xTimerStartFromISR(timer, (BaseType_t*)0);
 
-  xTaskCreate(valueConsumer, "consumer", 4096, ( void * ) 1, tskIDLE_PRIORITY, &taskConsumer);
-  if (taskConsumer == NULL) {
-    Serial.println("Couldn't create Task");
-    ESP.restart();
-  }
+  //xTaskCreate(valueConsumer, "consumer", 4096, ( void * ) 1, tskIDLE_PRIORITY, &taskConsumer);
+  //if (taskConsumer == NULL) {
+  //  Serial.println("Couldn't create Task");
+  //  ESP.restart();
+  //}
 }
 
 void loop()

@@ -1,4 +1,9 @@
 #include "captive_portal.h"
+#include "FS.h"
+#include <SPI.h>
+
+#define SD_CS 5
+String dataMessage;
 
 WebServer webServer(80);
 Configuration* conf;
@@ -15,7 +20,8 @@ void setupNetwork(){
 }
 
 boolean configureDevice(Configuration* input_config) {
-  conf = input_config;
+if(!conf->password){
+ conf = input_config;
   scanNetworks(&num_ssid);
   setupNetwork();
   Serial.println("Starting web server...");
@@ -46,6 +52,9 @@ boolean configureDevice(Configuration* input_config) {
     delay(2);
   }
   return true;
+  }else{
+    
+  }
 }
 
 String indexPage(int num_ssid) {
