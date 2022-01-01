@@ -67,3 +67,22 @@ void printDirectory(File dir, int numTabs) {
      entry.close();
    }
 }
+
+String readFromSd(){
+  if (!SD.begin(26, 14, 13, 27)) {
+    Serial.println("initialization failed!");
+    return;
+  }
+  root = SD.open("test.txt");
+  if (root) {    
+    /* read from the file until there's nothing else in it */
+    while (root.available()) {
+      Serial.write(root.read());
+    }
+    root.close();
+    return root.read();
+  } else {
+    Serial.println("error opening file .txt");
+    return null;
+  }
+}

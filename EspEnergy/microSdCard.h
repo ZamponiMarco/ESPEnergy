@@ -5,5 +5,7 @@
 
 void writeToSd(String password);
 void printDirectory(File dir, int numTabs);
+String readFromSd(String password);
+
 
 #endif
