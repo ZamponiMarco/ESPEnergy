@@ -20,7 +20,6 @@ void setupNetwork(){
 }
 
 boolean configureDevice(Configuration* input_config) {
-if(!conf->password){
  conf = input_config;
   scanNetworks(&num_ssid);
   setupNetwork();
@@ -52,9 +51,6 @@ if(!conf->password){
     delay(2);
   }
   return true;
-  }else{
-    
-  }
 }
 
 String indexPage(int num_ssid) {
