@@ -2,7 +2,7 @@
 
 File root;
 
-void writeToSd(String password)
+void writeToSd(String path, String toWrite)
 {
   Serial.print("Initializing SD card...");
   /* initialize SD library with Soft SPI pins, if using Hard SPI replace with this SD.begin()*/
@@ -11,37 +11,15 @@ void writeToSd(String password)
     return;
   }
   Serial.println("initialization done.");
-  root = SD.open("/");
-  if (root) {    
-    printDirectory(root, 0);
-    root.close();
-  } else {
-    Serial.println("error opening file.txt");
-  }
-  /* open "test.txt" for writing */
-  root = SD.open("test.txt", FILE_WRITE);
+  root = SD.open(path.c_str(), FILE_WRITE);
   if (root) {
-    root.println(password);
+    root.println(toWrite);
     root.flush();
    /* close the file */
     root.close();
   } else {
     Serial.println("error opening file.txt");
   }
-  delay(1000);
-  /* after writing then reopen the file and read it */
-  root = SD.open("test.txt");
-  if (root) {    
-    /* read from the file until there's nothing else in it */
-    while (root.available()) {
-      Serial.write(root.read());
-    }
-    root.close();
-  } else {
-    Serial.println("error opening file .txt");
-  }
-  
-  Serial.println("done!");
 }
 
 void printDirectory(File dir, int numTabs) {
@@ -68,14 +46,12 @@ void printDirectory(File dir, int numTabs) {
    }
 }
 
-String readFromSd(){
+/*String readFromSd(){
   if (!SD.begin(26, 14, 13, 27)) {
     Serial.println("initialization failed!");
-    return;
   }
   root = SD.open("test.txt");
   if (root) {    
-    /* read from the file until there's nothing else in it */
     while (root.available()) {
       Serial.write(root.read());
     }
@@ -83,6 +59,5 @@ String readFromSd(){
     return root.read();
   } else {
     Serial.println("error opening file .txt");
-    return null;
   }
-}
+}*/

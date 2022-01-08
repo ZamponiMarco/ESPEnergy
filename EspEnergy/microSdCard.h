@@ -3,9 +3,9 @@
 
 #include <mySD.h>
 
-void writeToSd(String password);
+void writeToSd(String path, String toWrite);
 void printDirectory(File dir, int numTabs);
-String readFromSd(String password);
+//String readFromSd(String password);
 
 
 #endif

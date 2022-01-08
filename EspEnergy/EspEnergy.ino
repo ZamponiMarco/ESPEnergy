@@ -1,4 +1,4 @@
-// #include <PubSubClient.h>
+#include <PubSubClient.h>
 #include <WiFiClient.h>
 #include <WiFi.h>
 
@@ -23,47 +23,18 @@ const char* password = "culocane";
 
 char *clientID = "Building0Test";
 char* topic = "test";
-char* server = "192.168.43.197";
+char* server = "broker.emqx.io";
 WiFiClient espClient;
-//PubSubClient client(espClient);
+PubSubClient client(espClient);
 
 void setup()
 {
   Serial.begin(115200);
 
-  Serial.println("Connecting");
-
-  //WiFi.begin(ssid, password);
-
-  // while (WiFi.status() != WL_CONNECTED) {
-  //   delay(500);
-  //   Serial.print(".");
-  // }
-
-  // Serial.println("Connected");
-
-  // client.setServer(server, 1883);
-  // if (client.connect(clientID)) {
-  //   Serial.println("Connected to MQTT broker");
-  //   Serial.print("Topic is: ");
-  //   Serial.println(topic);
-    
-  //   if (client.publish(topic, "hello from ESP8266")) {
-  //     Serial.println("Publish ok");
-  //   }
-  //   else {
-  //     Serial.println("Publish failed");
-  //   }
-  // }
-  // else {
-  //   Serial.println("MQTT connect failed");
-  //   Serial.println("Will reset and try again...");
-  //   abort();
-  // }
 
   configureDevice(conf);
   Serial.println(conf->password);
-  writeToSd(conf->password);
+  writeToSd("configuration" ,conf->password);
   pinMode(VOLT_PIN, INPUT);
   pinMode(AMPERE_ONE_PIN, INPUT);
   pinMode(AMPERE_TWO_PIN, INPUT);
@@ -74,18 +45,18 @@ void setup()
   Serial.println("Couldn't create Queue");
   ESP.restart();
   }
-  timer = xTimerCreate("Timer", 5000, pdTRUE, (void *)0, readTask);
+  timer = xTimerCreate("Timer", 1000, pdTRUE, (void *)0, readTask);
   if (timer == NULL) {
     Serial.println("Couldn't create Timer");
     ESP.restart();
   }
   xTimerStartFromISR(timer, (BaseType_t*)0);
 
-  //xTaskCreate(valueConsumer, "consumer", 4096, ( void * ) 1, tskIDLE_PRIORITY, &taskConsumer);
-  //if (taskConsumer == NULL) {
-  //  Serial.println("Couldn't create Task");
-  //  ESP.restart();
-  //}
+  xTaskCreate(valueConsumer, "consumer", 4096, ( void * ) 1, tskIDLE_PRIORITY, &taskConsumer);
+  if (taskConsumer == NULL) {
+    Serial.println("Couldn't create Task");
+    ESP.restart();
+  }
 }
 
 void loop()
@@ -113,12 +84,24 @@ void valueConsumer(void *pvParameters)
   {
     if (xQueueReceive(queue, &received, ( TickType_t ) 1000) == pdPASS)
     {
-      sendMqttData();
+      sendMqttData("pippo");
     } else {
       Serial.println("queue empty");
     }
   }
 }
 
-void sendMqttData(){
+void sendMqttData(String dataVariable){
+  client.setServer(server, 1883);
+   if (client.connect(clientID)) {
+     Serial.println("Connected to MQTT broker");
+     Serial.print("Topic is: ");
+     Serial.println(topic);
+     if (client.publish(topic, dataVariable.c_str())) {
+       Serial.println("Publish ok");
+     }
+     else {
+       Serial.println("Publish failed");
+     }
+  }
 }
