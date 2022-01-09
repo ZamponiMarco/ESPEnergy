@@ -5,6 +5,7 @@
 #include "captive_portal.h"
 #include "microSdCard.h"
 #include "measurement.h"
+#include "captureTime.h"
 
 #define VOLT_PIN 35
 #define AMPERE_ONE_PIN 32
@@ -15,6 +16,7 @@ TimerHandle_t timer;
 QueueHandle_t queue;
 TaskHandle_t taskConsumer;
 BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+RTC_DS3231 rtc;
 
 static Configuration* conf = new Configuration();
 
@@ -30,8 +32,7 @@ PubSubClient client(espClient);
 void setup()
 {
   Serial.begin(115200);
-
-
+  rtc.begin();
   configureDevice(conf);
   Serial.println(conf->password);
   initializeSd();
@@ -62,6 +63,9 @@ void setup()
 
 void loop()
 {
+   DateTime now = rtc.now();
+   printDateTime(now);
+   delay(1000);
 }
 
 void readTask(TimerHandle_t xTimer) {
