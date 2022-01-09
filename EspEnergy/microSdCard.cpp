@@ -2,8 +2,7 @@
 
 File root;
 
-void writeToSd(String path, String toWrite)
-{
+void initializeSd(){
   Serial.print("Initializing SD card...");
   /* initialize SD library with Soft SPI pins, if using Hard SPI replace with this SD.begin()*/
   if (!SD.begin(26, 14, 13, 27)) {
@@ -11,6 +10,10 @@ void writeToSd(String path, String toWrite)
     return;
   }
   Serial.println("initialization done.");
+}
+
+void writeToSd(String path, String toWrite)
+{
   root = SD.open(path.c_str(), FILE_WRITE);
   if (root) {
     root.println(toWrite);
