@@ -36,7 +36,7 @@ void setup()
   configureDevice(conf);
   Serial.println(conf->password);
   initializeSd();
-  writeToSd("configuration" ,conf->password);
+  writeToSd("test.txt" ,conf->password, conf->username);
   pinMode(VOLT_PIN, INPUT);
   pinMode(AMPERE_ONE_PIN, INPUT);
   pinMode(AMPERE_TWO_PIN, INPUT);

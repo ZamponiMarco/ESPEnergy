@@ -12,11 +12,14 @@ void initializeSd(){
   Serial.println("initialization done.");
 }
 
-void writeToSd(String path, String toWrite)
+void writeToSd(String path, String toWritePassword, String toWriteUsername)
 {
   root = SD.open(path.c_str(), FILE_WRITE);
   if (root) {
-    root.println(toWrite);
+    root.println("Username: ");
+    root.println(toWriteUsername);
+    root.println("Password: ");
+    root.println(toWritePassword);
     root.flush();
    /* close the file */
     root.close();
