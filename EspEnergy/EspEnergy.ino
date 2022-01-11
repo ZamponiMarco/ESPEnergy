@@ -28,14 +28,17 @@ char* topic = "test";
 char* server = "broker.emqx.io";
 WiFiClient espClient;
 PubSubClient client(espClient);
+String sdContent;
 
 void setup()
 {
   Serial.begin(115200);
   rtc.begin();
+  initializeSd();
+  Serial.println("Contenuto della sd: ");
+  readFromSd();
   configureDevice(conf);
   Serial.println(conf->password);
-  initializeSd();
   writeToSd("test.txt" ,conf->password, conf->username);
   pinMode(VOLT_PIN, INPUT);
   pinMode(AMPERE_ONE_PIN, INPUT);

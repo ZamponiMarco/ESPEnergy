@@ -6,7 +6,7 @@
 void initializeSd();
 void writeToSd(String path, String toWritePassword, String toWriteUsername);
 void printDirectory(File dir, int numTabs);
-//String readFromSd(String password);
+String readFromSd();
 
 
 #endif

@@ -1,6 +1,7 @@
 #include "microSdCard.h"
 
 File root;
+String fileContent;
 
 void initializeSd(){
   Serial.print("Initializing SD card...");
@@ -52,18 +53,21 @@ void printDirectory(File dir, int numTabs) {
    }
 }
 
-/*String readFromSd(){
-  if (!SD.begin(26, 14, 13, 27)) {
-    Serial.println("initialization failed!");
-  }
+String readFromSd(){
   root = SD.open("test.txt");
+  String buffer;
+  String datas;
   if (root) {    
     while (root.available()) {
+      buffer = root.readStringUntil(':');
+      datas = root.readStringUntil('\n');
+      Serial.print("Datas: " + datas);
       Serial.write(root.read());
     }
     root.close();
-    return root.read();
+    fileContent = root.read();
+    return fileContent;
   } else {
     Serial.println("error opening file .txt");
   }
-}*/
+}
