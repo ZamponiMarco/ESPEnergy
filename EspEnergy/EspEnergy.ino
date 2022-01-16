@@ -33,28 +33,25 @@ String sdContent;
 void setup()
 {
   Serial.begin(115200);
-  rtc.begin();
-  initializeSd();
-  Serial.println("Contenuto della sd: ");
-  Sdconfig* pointer = readFromSd();
-  if (pointer != NULL) {
-    Serial.println("Connecting from sd...");
-    Serial.println(pointer->username);
-    Serial.println(pointer->password);
-    Serial.println(pointer->ssid);
-    Serial.println("Disabling access point...");
-    WiFi.softAPdisconnect(true);
-    //Encryption type
-    selectEncryptionType((wifi_auth_mode_t) 3, pointer->ssid, pointer->username, pointer->password);
-  } else {
-    configureDevice(conf);
-  }
-  Serial.println(conf->password);
-  writeToSd("test.txt" , conf->password, conf->username, conf->ssid);
   pinMode(VOLT_PIN, INPUT);
   pinMode(AMPERE_ONE_PIN, INPUT);
   pinMode(AMPERE_TWO_PIN, INPUT);
   pinMode(AMPERE_THREE_PIN, INPUT);
+  rtc.begin();
+  initializeSd();
+  Serial.println("Contenuto della sd: ");
+  Sdconfig* sdConf = readFromSd();
+  if (sdConf != NULL) {
+    Serial.println("Connecting from sd...");
+    Serial.println(sdConf->username);
+    Serial.println(sdConf->password);
+    Serial.println(sdConf->ssid);
+    //Encryption type
+    selectEncryptionType((wifi_auth_mode_t) 3, sdConf->ssid, sdConf->username, sdConf->password);
+  } else {
+    configureDevice(conf);
+    writeToSd("test.txt" , conf->password, conf->username, conf->ssid);
+  }
 
   queue = xQueueCreate(10, sizeof(Measurement));
   if (queue == NULL) {
@@ -77,9 +74,6 @@ void setup()
 
 void loop()
 {
-  DateTime now = rtc.now();
-  printDateTime(now);
-  delay(1000);
 }
 
 void readTask(TimerHandle_t xTimer) {
@@ -87,6 +81,8 @@ void readTask(TimerHandle_t xTimer) {
   int ampere_one = analogRead(AMPERE_ONE_PIN);
   int ampere_two = analogRead(AMPERE_TWO_PIN);
   int ampere_three = analogRead(AMPERE_THREE_PIN);
+  DateTime now = rtc.now();
+  printDateTime(now);
   Measurement misura = {volt, ampere_one, ampere_two, ampere_three, 0};
   if (xQueueSendFromISR(queue, &misura, &xHigherPriorityTaskWoken )) {
     Serial.println("Object sent");
