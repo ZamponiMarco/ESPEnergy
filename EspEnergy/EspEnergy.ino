@@ -36,19 +36,30 @@ void setup()
   rtc.begin();
   initializeSd();
   Serial.println("Contenuto della sd: ");
-  readFromSd();
-  configureDevice(conf);
+  Sdconfig* pointer = readFromSd();
+  if (pointer != NULL) {
+    Serial.println("Connecting from sd...");
+    Serial.println(pointer->username);
+    Serial.println(pointer->password);
+    Serial.println(pointer->ssid);
+    Serial.println("Disabling access point...");
+    WiFi.softAPdisconnect(true);
+    //Encryption type
+    selectEncryptionType((wifi_auth_mode_t) 3, pointer->ssid, pointer->username, pointer->password);
+  } else {
+    configureDevice(conf);
+  }
   Serial.println(conf->password);
-  writeToSd("test.txt" ,conf->password, conf->username);
+  writeToSd("test.txt" , conf->password, conf->username, conf->ssid);
   pinMode(VOLT_PIN, INPUT);
   pinMode(AMPERE_ONE_PIN, INPUT);
   pinMode(AMPERE_TWO_PIN, INPUT);
   pinMode(AMPERE_THREE_PIN, INPUT);
-  
+
   queue = xQueueCreate(10, sizeof(Measurement));
   if (queue == NULL) {
-  Serial.println("Couldn't create Queue");
-  ESP.restart();
+    Serial.println("Couldn't create Queue");
+    ESP.restart();
   }
   timer = xTimerCreate("Timer", 1000, pdTRUE, (void *)0, readTask);
   if (timer == NULL) {
@@ -66,9 +77,9 @@ void setup()
 
 void loop()
 {
-   DateTime now = rtc.now();
-   printDateTime(now);
-   delay(1000);
+  DateTime now = rtc.now();
+  printDateTime(now);
+  delay(1000);
 }
 
 void readTask(TimerHandle_t xTimer) {
@@ -99,17 +110,17 @@ void valueConsumer(void *pvParameters)
   }
 }
 
-void sendMqttData(String dataVariable){
+void sendMqttData(String dataVariable) {
   client.setServer(server, 1883);
-   if (client.connect(clientID)) {
-     Serial.println("Connected to MQTT broker");
-     Serial.print("Topic is: ");
-     Serial.println(topic);
-     if (client.publish(topic, dataVariable.c_str())) {
-       Serial.println("Publish ok");
-     }
-     else {
-       Serial.println("Publish failed");
-     }
+  if (client.connect(clientID)) {
+    Serial.println("Connected to MQTT broker");
+    Serial.print("Topic is: ");
+    Serial.println(topic);
+    if (client.publish(topic, dataVariable.c_str())) {
+      Serial.println("Publish ok");
+    }
+    else {
+      Serial.println("Publish failed");
+    }
   }
 }

@@ -134,15 +134,25 @@ boolean selectEncryptionType(wifi_auth_mode_t encryption, String ssid, String us
       connectWpa(ssid.c_str(), password.c_str());
       break;
   }
+  int counter = 0;
   while (WiFi.status() != WL_CONNECTED) {
+    //If after 30 second it doesn't connect, it calls configureDevice()
     delay(500);
     Serial.print(".");
+    counter += 500;
+    if(counter > 30000){
+      break;
+    }
   }
-
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
+  if(WiFi.status() != WL_CONNECTED){
+    Serial.println("Timed out");
+    configureDevice(conf);
+  }else{
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+  }
 }
 
 void connectOpenNetwork(const char* ssid) {

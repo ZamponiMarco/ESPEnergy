@@ -3,10 +3,16 @@
 
 #include <mySD.h>
 
+typedef struct {
+  char ssid[50];
+  char username[50];
+  char password[50];
+} Sdconfig;
+
 void initializeSd();
-void writeToSd(String path, String toWritePassword, String toWriteUsername);
+void writeToSd(String path, String toWritePassword, String toWriteUsername, String ssid);
 void printDirectory(File dir, int numTabs);
-String readFromSd();
+Sdconfig* readFromSd();
 
 
 #endif

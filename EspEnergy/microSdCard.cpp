@@ -2,6 +2,7 @@
 
 File root;
 String fileContent;
+Sdconfig* sdconfig = NULL;
 
 void initializeSd(){
   Serial.print("Initializing SD card...");
@@ -13,14 +14,16 @@ void initializeSd(){
   Serial.println("initialization done.");
 }
 
-void writeToSd(String path, String toWritePassword, String toWriteUsername)
+void writeToSd(String path, String toWritePassword, String toWriteUsername, String toWriteSsid)
 {
   root = SD.open(path.c_str(), FILE_WRITE);
   if (root) {
-    root.println("Username: ");
-    root.println(toWriteUsername);
-    root.println("Password: ");
-    root.println(toWritePassword);
+    Sdconfig config;
+    //mi serve: ssid, username, password, tipo di cifratura
+    toWriteUsername.toCharArray(config.username, toWriteUsername.length()+1);
+    toWritePassword.toCharArray(config.password, toWritePassword.length()+1);
+    toWriteSsid.toCharArray(config.ssid, toWriteSsid.length()+1);
+    root.write((uint8_t*) &config,sizeof(Sdconfig));
     root.flush();
    /* close the file */
     root.close();
@@ -53,21 +56,22 @@ void printDirectory(File dir, int numTabs) {
    }
 }
 
-String readFromSd(){
+Sdconfig* readFromSd(){
   root = SD.open("test.txt");
-  String buffer;
+  int buffer;
   String datas;
   if (root) {    
     while (root.available()) {
-      buffer = root.readStringUntil(':');
-      datas = root.readStringUntil('\n');
-      Serial.print("Datas: " + datas);
-      Serial.write(root.read());
+      if(sdconfig != NULL){
+        free(sdconfig);
+      }
+      sdconfig = (Sdconfig*) malloc(root.size());
+      buffer = root.read(sdconfig, root.size());
     }
     root.close();
-    fileContent = root.read();
-    return fileContent;
+    return sdconfig;
   } else {
     Serial.println("error opening file .txt");
+    return NULL;
   }
 }
