@@ -1,3 +1,4 @@
+#line 1 "c:\\Users\\marcz\\OneDrive\\Desktop\\Progetti\\ESPEnergy\\EspEnergy\\measurement.h"
 #ifndef measurement_h
 #define measurement_h
 

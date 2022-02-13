@@ -1,10 +1,11 @@
+#line 1 "c:\\Users\\marcz\\OneDrive\\Desktop\\Progetti\\ESPEnergy\\EspEnergy\\microSdCard.cpp"
 #include "microSdCard.h"
 
 File root;
 String fileContent;
 Sdconfig* sdconfig = NULL;
 
-bool initializeSd(){
+boolean initializeSd(){
   Serial.print("Initializing SD card...");
   /* initialize SD library with Soft SPI pins, if using Hard SPI replace with this SD.begin()*/
   if (!SD.begin(26, 14, 13, 27)) {
