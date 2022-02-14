@@ -146,7 +146,6 @@ boolean selectEncryptionType(wifi_auth_mode_t encryption, String ssid, String us
   }
   if(WiFi.status() != WL_CONNECTED){
     Serial.println("Timed out");
-    configureDevice(conf);
   }else{
     Serial.println("");
     Serial.println("WiFi connected");

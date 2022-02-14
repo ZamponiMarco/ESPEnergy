@@ -41,11 +41,19 @@ void setup()
   initializeSd();
   Serial.println("Contenuto della sd: ");
   Sdconfig* sdConf = readFromSd();
+  Measurement* misureSd = readMeasurementFromSd();
+  if (misureSd != NULL) {
+    Serial.println("Reading values from sd...");
+    Serial.println(misureSd->ampere1);
+    Serial.println(misureSd->ampere2);
+    Serial.println(misureSd->ampere3);
+  }
   if (sdConf != NULL) {
     Serial.println("Connecting from sd...");
     Serial.println(sdConf->username);
     Serial.println(sdConf->password);
     Serial.println(sdConf->ssid);
+    
     //Encryption type
     selectEncryptionType((wifi_auth_mode_t) 3, sdConf->ssid, sdConf->username, sdConf->password);
   } else {
@@ -117,6 +125,9 @@ void sendMqttData(String dataVariable) {
     }
     else {
       Serial.println("Publish failed");
+      writeMeasurementSd();
     }
+  }else{
+    writeMeasurementSd();
   }
 }

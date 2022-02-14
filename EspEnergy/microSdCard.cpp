@@ -1,8 +1,10 @@
 #include "microSdCard.h"
+#include "measurement.h"
 
 File root;
 String fileContent;
 Sdconfig* sdconfig = NULL;
+Measurement* measurement = NULL;
 
 void initializeSd(){
   Serial.print("Initializing SD card...");
@@ -13,6 +15,22 @@ void initializeSd(){
   }
   Serial.println("initialization done.");
 }
+
+void writeMeasurementSd(){
+  root = SD.open("test.txt", FILE_WRITE);
+  Serial.print("done1");
+  if (root) {
+    Serial.print("done2");
+    root.write((uint8_t*) &measurement->ampere1,sizeof(Measurement));
+    root.flush();
+    root.write((uint8_t*) &measurement->ampere2,sizeof(Measurement));
+    root.flush();
+    root.write((uint8_t*) &measurement->ampere3,sizeof(Measurement));
+    root.flush();
+    Serial.println("done3");
+    root.close();
+  }
+} 
 
 void writeToSd(String path, String toWritePassword, String toWriteUsername, String toWriteSsid)
 {
@@ -59,6 +77,7 @@ void printDirectory(File dir, int numTabs) {
 Sdconfig* readFromSd(){
   root = SD.open("test.txt");
   int buffer;
+  int bufferMeasurement;
   String datas;
   if (root) {    
     while (root.available()) {
@@ -70,6 +89,26 @@ Sdconfig* readFromSd(){
     }
     root.close();
     return sdconfig;
+  } else {
+    Serial.println("error opening file .txt");
+    return NULL;
+  }
+}
+
+Measurement* readMeasurementFromSd(){
+    root = SD.open("test.txt");
+  int buffer;
+  String datas;
+  if (root) {    
+    while (root.available()) {
+      if(sdconfig != NULL){
+        free(sdconfig);
+      }
+      measurement = (Measurement*) malloc(root.size());
+      buffer = root.read(measurement, root.size());
+    }
+    root.close();
+    return measurement;
   } else {
     Serial.println("error opening file .txt");
     return NULL;
