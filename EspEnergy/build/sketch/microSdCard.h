@@ -1,6 +1,6 @@
+#line 1 "c:\\Users\\marcz\\OneDrive\\Desktop\\Progetti\\ESPEnergy\\EspEnergy\\microSdCard.h"
 #ifndef microSdCard_h
 #define microSdCard_h
-#include "measurement.h"
 
 #include <mySD.h>
 
@@ -10,11 +10,10 @@ typedef struct {
   char password[50];
 } Sdconfig;
 
-bool initializeSd();
+void initializeSd();
 void writeToSd(String path, String toWritePassword, String toWriteUsername, String ssid);
 void printDirectory(File dir, int numTabs);
 Sdconfig* readFromSd();
-void writeMeasurementSd();
-Measurement* readMeasurementFromSd();
+
 
 #endif

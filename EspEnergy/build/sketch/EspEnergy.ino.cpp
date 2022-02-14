@@ -1,7 +1,8 @@
+#include <Arduino.h>
+#line 1 "c:\\Users\\marcz\\OneDrive\\Desktop\\Progetti\\ESPEnergy\\EspEnergy\\EspEnergy.ino"
 #include <PubSubClient.h>
 #include <WiFiClient.h>
 #include <WiFi.h>
-#include <Arduino_JSON.h>
 
 #include "captive_portal.h"
 #include "microSdCard.h"
@@ -17,19 +18,19 @@ TimerHandle_t timer;
 QueueHandle_t queue;
 TaskHandle_t taskConsumer;
 BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
 RTC_DS3231 rtc;
 
 static Configuration* conf = new Configuration();
+
+const char* ssid = "POCO M3";
+const char* password = "culocane";
 
 char *clientID = "Building0Test";
 char* topic = "test";
 char* server = "broker.emqx.io";
 WiFiClient espClient;
 PubSubClient client(espClient);
-
-bool sd = false;
-bool wifi = false;
+String sdContent;
 
 void setup()
 {
@@ -38,22 +39,17 @@ void setup()
   pinMode(AMPERE_ONE_PIN, INPUT);
   pinMode(AMPERE_TWO_PIN, INPUT);
   pinMode(AMPERE_THREE_PIN, INPUT);
-  Serial.println("Booting...");
   rtc.begin();
-  if (initializeSd()) {
-    sd = true;
-    Sdconfig* sdConf = readFromSd();
-    if (sdConf != NULL) {
-      Serial.println("Connecting from sd...");
-      Serial.println(sdConf->username);
-      Serial.println(sdConf->password);
-      Serial.println(sdConf->ssid);
-      selectEncryptionType((wifi_auth_mode_t) 3, sdConf->ssid, sdConf->username, sdConf->password);
-      wifi = true;
-    } else {
-      configureDevice(conf);
-      writeToSd("test.txt" , conf->password, conf->username, conf->ssid);
-    }
+  initializeSd();
+  Serial.println("Contenuto della sd: ");
+  Sdconfig* sdConf = readFromSd();
+  if (sdConf != NULL) {
+    Serial.println("Connecting from sd...");
+    Serial.println(sdConf->username);
+    Serial.println(sdConf->password);
+    Serial.println(sdConf->ssid);
+    //Encryption type
+    selectEncryptionType((wifi_auth_mode_t) 3, sdConf->ssid, sdConf->username, sdConf->password);
   } else {
     configureDevice(conf);
     writeToSd("test.txt" , conf->password, conf->username, conf->ssid);
@@ -105,42 +101,25 @@ void valueConsumer(void *pvParameters)
   {
     if (xQueueReceive(queue, &received, ( TickType_t ) 1000) == pdPASS)
     {
-      sendMqttData(received);
+      sendMqttData("pippo");
     } else {
       Serial.println("queue empty");
     }
   }
 }
 
-void sendMqttData(Measurement dataVariable) {
+void sendMqttData(String dataVariable) {
   client.setServer(server, 1883);
   if (client.connect(clientID)) {
     Serial.println("Connected to MQTT broker");
     Serial.print("Topic is: ");
     Serial.println(topic);
-    if (client.publish(topic, toJson(dataVariable).c_str())) {
+    if (client.publish(topic, dataVariable.c_str())) {
       Serial.println("Publish ok");
     }
     else {
       Serial.println("Publish failed");
-      writeMeasurementSd();
     }
-  }else{
-    writeMeasurementSd();
   }
 }
 
-String toJson(Measurement dataVariable) {
-  JSONVar toSend;
-  toSend["volt"] = dataVariable.volt;
-  toSend["ampere_one"] = dataVariable.ampere_one;
-  toSend["ampere_two"] = dataVariable.ampere_two;
-  toSend["ampere_three"] = dataVariable.ampere_three;
-  toSend["time"] = dataVariable.timestamp;
-  return JSON.stringify(toSend);
-}
-
-double scale(int analog, double min, double max) {
-  double step = (max - min) / 4095.0;
-  return analog * step + min;
-}
