@@ -18,15 +18,11 @@ bool initializeSd(){
 }
 
 void writeMeasurementSd(){
-  root = SD.open("test.txt", FILE_WRITE);
+  root = SD.open("measurement.txt", FILE_WRITE);
   Serial.print("done1");
   if (root) {
     Serial.print("done2");
-    root.write((uint8_t*) &measurement->ampere1,sizeof(Measurement));
-    root.flush();
-    root.write((uint8_t*) &measurement->ampere2,sizeof(Measurement));
-    root.flush();
-    root.write((uint8_t*) &measurement->ampere3,sizeof(Measurement));
+    root.write((uint8_t*) &measurement,sizeof(Measurement));
     root.flush();
     Serial.println("done3");
     root.close();
@@ -85,8 +81,8 @@ Sdconfig* readFromSd(){
       if(sdconfig != NULL){
         free(sdconfig);
       }
-      sdconfig = (Sdconfig*) malloc(root.size());
-      buffer = root.read(sdconfig, root.size());
+      sdconfig = (Sdconfig*) malloc(sizeof(Sdconfig));
+      buffer = root.read(sdconfig, sizeof(Sdconfig));
     }
     root.close();
     return sdconfig;
@@ -97,16 +93,14 @@ Sdconfig* readFromSd(){
 }
 
 Measurement* readMeasurementFromSd(){
-    root = SD.open("test.txt");
-  int buffer;
-  String datas;
+  root = SD.open("measurement.txt");
   if (root) {    
     while (root.available()) {
       if(sdconfig != NULL){
         free(sdconfig);
       }
-      measurement = (Measurement*) malloc(root.size());
-      buffer = root.read(measurement, root.size());
+      measurement = (Measurement*) malloc(sizeof(Measurement));
+      root.read(measurement, sizeof(Measurement));
     }
     root.close();
     return measurement;

@@ -23,7 +23,7 @@ RTC_DS3231 rtc;
 static Configuration* conf = new Configuration();
 
 char *clientID = "Building0Test";
-char* topic = "test";
+char* topic = "esptest";
 char* server = "broker.emqx.io";
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -48,6 +48,13 @@ void setup()
       Serial.println(sdConf->username);
       Serial.println(sdConf->password);
       Serial.println(sdConf->ssid);
+      Measurement* misureSd = readMeasurementFromSd();
+      if (misureSd != NULL) {
+        Serial.println("Reading values from sd...");
+        Serial.println(misureSd->ampere_one);
+        Serial.println(misureSd->ampere_two);
+        Serial.println(misureSd->ampere_three);
+      }
       selectEncryptionType((wifi_auth_mode_t) 3, sdConf->ssid, sdConf->username, sdConf->password);
       wifi = true;
     } else {
@@ -112,20 +119,20 @@ void valueConsumer(void *pvParameters)
   }
 }
 
-void sendMqttData(Measurement dataVariable) {
+void sendMqttData(Measurement measurement) {
   client.setServer(server, 1883);
   if (client.connect(clientID)) {
     Serial.println("Connected to MQTT broker");
     Serial.print("Topic is: ");
     Serial.println(topic);
-    if (client.publish(topic, toJson(dataVariable).c_str())) {
+    if (client.publish(topic, toJson(measurement).c_str())) {
       Serial.println("Publish ok");
     }
     else {
       Serial.println("Publish failed");
       writeMeasurementSd();
     }
-  }else{
+  } else{
     writeMeasurementSd();
   }
 }
