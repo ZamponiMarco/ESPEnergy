@@ -1,9 +1,4 @@
 #include "captive_portal.h"
-#include "FS.h"
-#include <SPI.h>
-
-#define SD_CS 5
-String dataMessage;
 
 WebServer webServer(80);
 Configuration* conf;

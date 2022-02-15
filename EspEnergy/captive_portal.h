@@ -3,7 +3,7 @@
 
 #include <WiFi.h>
 #include <WebServer.h>
-#include "esp_wpa2.h" //wpa2 library for connections to Enterprise networks
+#include <esp_wpa2.h>
 
 typedef struct {
   String ssid;
