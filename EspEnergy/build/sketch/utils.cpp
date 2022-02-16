@@ -6,7 +6,7 @@ String toJson(Measurement dataVariable) {
   toSend["ampere_one"] = dataVariable.ampere_one;
   toSend["ampere_two"] = dataVariable.ampere_two;
   toSend["ampere_three"] = dataVariable.ampere_three;
-  //toSend["time"] = dataVariable.timestamp;
+  toSend["time"] = dataVariable.timestamp;
   return JSON.stringify(toSend);
 }
 

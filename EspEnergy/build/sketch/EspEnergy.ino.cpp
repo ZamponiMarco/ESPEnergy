@@ -1,3 +1,5 @@
+#include <Arduino.h>
+#line 1 "c:\\Users\\User\\Desktop\\Repository GitHub\\ESPEnergy\\EspEnergy\\EspEnergy.ino"
 #include <PubSubClient.h>
 #include <WiFiClient.h>
 #include <WiFi.h>
@@ -7,7 +9,6 @@
 #include "measurement.h"
 #include "captureTime.h"
 #include "utils.h"
-#include "rgbLed.h"
 
 #define VOLT_PIN 35
 #define AMPERE_ONE_PIN 32
@@ -18,7 +19,6 @@ TimerHandle_t timer;
 QueueHandle_t queue;
 TaskHandle_t taskConsumer;
 BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-TaskHandle_t consumer_light;
 
 RTC_DS3231 rtc;
 
@@ -34,7 +34,6 @@ bool wifi = false;
 void setup()
 {
   Serial.begin(115200);
-  manageLed();
   pinMode(VOLT_PIN, INPUT);
   pinMode(AMPERE_ONE_PIN, INPUT);
   pinMode(AMPERE_TWO_PIN, INPUT);
@@ -61,7 +60,6 @@ void setup()
     } else {
       configureDevice(conf);
       writeToSd("test.txt" , conf->password, conf->username, conf->ssid);
-      setRedLight();
     }
   } else {
     configureDevice(conf);
@@ -87,48 +85,12 @@ void setup()
   xTaskCreate(valueConsumer, "consumer", 4096, ( void * ) 1, tskIDLE_PRIORITY, &taskConsumer);
   if (taskConsumer == NULL) {
     Serial.println("Couldn't create Task");
-    setRedLight();
     ESP.restart();
   }
 }
 
 void loop()
 {
-}
-
-void manageLed(){
-  setupLed();
-  xTaskCreate(ledTask, "consumer_light", 2048, NULL, 3, NULL);
-}
-
-void ledTask(void * parameter){
-  byte busStatus = Wire.endTransmission();
-  // Repeat every second
-  for(;;){
-
-    if(wifi){
-      setGreenLight();
-    }
-
-    if(WiFi.status() == WL_CONNECTED && queue != NULL){
-      turnOffLed();
-      delay(200);
-      setBlueLight();
-    }
-
-    if(WiFi.status() == WL_CONNECTED && busStatus==0){
-      setRedLight();
-      delay(200);
-      setBlueLight();
-    }
-
-    if(WiFi.status() == WL_DISCONNECTED){
-      setRedLight();
-      WiFi.reconnect();
-    }
-    
-    delay(1000);
-  }
 }
 
 void readTask(TimerHandle_t xTimer) {
@@ -138,7 +100,7 @@ void readTask(TimerHandle_t xTimer) {
   int ampere_three = analogRead(AMPERE_THREE_PIN);
   DateTime now = rtc.now();
   printDateTime(now);
-  Measurement misura = {volt, ampere_one, ampere_two, ampere_three, now};
+  Measurement misura = {volt, ampere_one, ampere_two, ampere_three, 0};
   if (xQueueSendFromISR(queue, &misura, &xHigherPriorityTaskWoken )) {
     Serial.println("Object sent");
   } else {
@@ -165,7 +127,6 @@ void sendMqttData(Measurement measurement) {
     Serial.print(conf->topic);
     if (client.publish(conf->topic.c_str(), toJson(measurement).c_str())) {
       Serial.println(" Publish ok");
-      setGreenLight();
     }
     else {
       Serial.println(" Publish failed");
