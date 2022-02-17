@@ -61,7 +61,6 @@ void setup()
     } else {
       configureDevice(conf);
       writeToSd("test.txt" , conf->password, conf->username, conf->ssid);
-      setRedLight();
     }
   } else {
     configureDevice(conf);
@@ -106,7 +105,7 @@ void ledTask(void * parameter){
   // Repeat every second
   for(;;){
 
-    if(wifi){
+    if(WiFi.status() == WL_CONNECTED){
       setGreenLight();
     }
 
@@ -124,7 +123,6 @@ void ledTask(void * parameter){
 
     if(WiFi.status() == WL_DISCONNECTED){
       setRedLight();
-      WiFi.reconnect();
     }
     
     delay(1000);
