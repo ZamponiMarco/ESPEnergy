@@ -10,6 +10,7 @@ Measurement *m = NULL;
 void initializeSd(){
   Serial.print("Initializing SD card...");
   /* initialize SD library with Soft SPI pins, if using Hard SPI replace with this SD.begin()*/
+  // boolean begin(uint8_t csPin = SD_CHIP_SELECT_PIN, int8_t mosi = -1, int8_t miso = -1, int8_t sck = -1);
   if (!SD.begin(26, 14, 13, 27)) {
     Serial.println("initialization failed!");
     return;
