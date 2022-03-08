@@ -1,4 +1,3 @@
-#include "Arduino.h"
 #include "SPIFFS.h"
 #include "measurement.h"
 
@@ -6,7 +5,7 @@ File root;
 Measurement misura1 = {3, 0, 1, 2, 0};
 Measurement misura2 = {3, 0, 1, 2, 1};
 Measurement misura3 = {3, 0, 1, 2, 2};
-Measurement *m = NULL;
+byte *m = NULL;
  
 void setup()
 {
@@ -52,10 +51,10 @@ void loop()
       if(m != NULL){
         free(m);
       }
-      m = (Measurement*) malloc(sizeof(Measurement));
-      //root.read(m, sizeof(Measurement));
-      root.read();
-      Serial.println(m->timestamp);
+      m = (byte*) malloc(sizeof(Measurement));
+      root.read(m, sizeof(Measurement));
+      //root.read();
+      Serial.println(((Measurement *)m)->timestamp);
     }
     root.close();
     //SPIFFS.remove("/test.txt");
