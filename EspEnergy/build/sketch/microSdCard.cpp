@@ -1,12 +1,12 @@
-#include "microSdCard.h"
+#include "spiffs.h"
 #include "measurement.h"
 
 File root;
 String fileContent;
-Sdconfig* sdconfig = NULL;
+InternetConfig* internetConfig = NULL;
 Measurement* measurement = NULL;
 
-bool initializeSd(){
+bool initializeSPIFFS(){
   Serial.print("Initializing SD card...");
   /* initialize SD library with Soft SPI pins, if using Hard SPI replace with this SD.begin()*/
   // cs, mosi, miso, clk
@@ -18,7 +18,7 @@ bool initializeSd(){
   return true;
 }
 
-void writeMeasurementSd(){
+void writeMeasurementToFile(){
   root = SD.open("measurement.txt", FILE_WRITE);
   Serial.print("done1");
   if (root) {
@@ -30,16 +30,16 @@ void writeMeasurementSd(){
   }
 } 
 
-void writeToSd(String path, String toWritePassword, String toWriteUsername, String toWriteSsid)
+void writeToFile(String path, String toWritePassword, String toWriteUsername, String toWriteSsid)
 {
   root = SD.open(path.c_str(), FILE_WRITE);
   if (root) {
-    Sdconfig config;
+    InternetConfig config;
     //mi serve: ssid, username, password, tipo di cifratura
     toWriteUsername.toCharArray(config.username, toWriteUsername.length()+1);
     toWritePassword.toCharArray(config.password, toWritePassword.length()+1);
     toWriteSsid.toCharArray(config.ssid, toWriteSsid.length()+1);
-    root.write((uint8_t*) &config,sizeof(Sdconfig));
+    root.write((uint8_t*) &config,sizeof(InternetConfig));
     root.flush();
    /* close the file */
     root.close();
@@ -72,33 +72,33 @@ void printDirectory(File dir, int numTabs) {
    }
 }
 
-Sdconfig* readFromSd(){
+InternetConfig* readFromFile(){
   root = SD.open("test.txt");
   int buffer;
   int bufferMeasurement;
   String datas;
   if (root) {    
     while (root.available()) {
-      if(sdconfig != NULL){
-        free(sdconfig);
+      if(internetConfig != NULL){
+        free(internetConfig);
       }
-      sdconfig = (Sdconfig*) malloc(sizeof(Sdconfig));
-      buffer = root.read(sdconfig, sizeof(Sdconfig));
+      internetConfig = (InternetConfig*) malloc(sizeof(InternetConfig));
+      buffer = root.read(internetConfig, sizeof(InternetConfig));
     }
     root.close();
-    return sdconfig;
+    return internetConfig;
   } else {
     Serial.println("error opening file .txt");
     return NULL;
   }
 }
 
-Measurement* readMeasurementFromSd(){
+Measurement* readMeasurementFromFile(){
   root = SD.open("measurement.txt");
   if (root) {    
     while (root.available()) {
-      if(sdconfig != NULL){
-        free(sdconfig);
+      if(internetConfig != NULL){
+        free(internetConfig);
       }
       measurement = (Measurement*) malloc(sizeof(Measurement));
       root.read(measurement, sizeof(Measurement));

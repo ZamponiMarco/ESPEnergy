@@ -1,3 +1,5 @@
+#include <Arduino.h>
+#line 1 "c:\\Users\\User\\Desktop\\Repository GitHub\\ESPEnergy\\EspEnergy\\EspEnergy.ino"
 #include <PubSubClient.h>
 #include <WiFiClient.h>
 #include <WiFi.h>
@@ -31,6 +33,21 @@ PubSubClient client(espClient);
 bool sd = false;
 bool wifi = false;
 
+#line 34 "c:\\Users\\User\\Desktop\\Repository GitHub\\ESPEnergy\\EspEnergy\\EspEnergy.ino"
+void setup();
+#line 94 "c:\\Users\\User\\Desktop\\Repository GitHub\\ESPEnergy\\EspEnergy\\EspEnergy.ino"
+void loop();
+#line 98 "c:\\Users\\User\\Desktop\\Repository GitHub\\ESPEnergy\\EspEnergy\\EspEnergy.ino"
+void manageLed();
+#line 103 "c:\\Users\\User\\Desktop\\Repository GitHub\\ESPEnergy\\EspEnergy\\EspEnergy.ino"
+void ledTask(void * parameter);
+#line 132 "c:\\Users\\User\\Desktop\\Repository GitHub\\ESPEnergy\\EspEnergy\\EspEnergy.ino"
+void readTask(TimerHandle_t xTimer);
+#line 147 "c:\\Users\\User\\Desktop\\Repository GitHub\\ESPEnergy\\EspEnergy\\EspEnergy.ino"
+void valueConsumer(void *pvParameters);
+#line 160 "c:\\Users\\User\\Desktop\\Repository GitHub\\ESPEnergy\\EspEnergy\\EspEnergy.ino"
+void sendMqttData(Measurement measurement);
+#line 34 "c:\\Users\\User\\Desktop\\Repository GitHub\\ESPEnergy\\EspEnergy\\EspEnergy.ino"
 void setup()
 {
   Serial.begin(115200);
@@ -60,11 +77,11 @@ void setup()
       wifi = true;
     } else {
       configureDevice(conf);
-      writeToFile("/test.txt" , conf->password, conf->username, conf->ssid);
+      writeToFile("test.txt" , conf->password, conf->username, conf->ssid);
     }
   } else {
     configureDevice(conf);
-    writeToFile("/test.txt" , conf->password, conf->username, conf->ssid);
+    writeToFile("test.txt" , conf->password, conf->username, conf->ssid);
   }
   
   client.setServer(conf->broker.c_str(), 1883);
@@ -173,3 +190,4 @@ void sendMqttData(Measurement measurement) {
     writeMeasurementToFile();
   }
 }
+
