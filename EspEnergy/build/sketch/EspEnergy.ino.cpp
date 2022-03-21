@@ -77,11 +77,11 @@ void setup()
       wifi = true;
     } else {
       configureDevice(conf);
-      writeToFile("test.txt" , conf->password, conf->username, conf->ssid);
+      writeToFile("/test.txt" , conf->password, conf->username, conf->ssid);
     }
   } else {
     configureDevice(conf);
-    writeToFile("test.txt" , conf->password, conf->username, conf->ssid);
+    writeToFile("/test.txt" , conf->password, conf->username, conf->ssid);
   }
   
   client.setServer(conf->broker.c_str(), 1883);

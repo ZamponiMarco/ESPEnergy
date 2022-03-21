@@ -16,6 +16,5 @@ void writeToFile(String path, String toWritePassword, String toWriteUsername, St
 InternetConfig* readFromFile();
 void writeMeasurementToFile();
 Measurement* readMeasurementFromFile();
-void resetESP();
 
 #endif
