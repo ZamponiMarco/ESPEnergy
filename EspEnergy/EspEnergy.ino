@@ -13,7 +13,7 @@
 #define AMPERE_ONE_PIN 32
 #define AMPERE_TWO_PIN 33
 #define AMPERE_THREE_PIN 25
-#define BUTTON_RESET_PIN 21
+#define BUTTON_RESET_PIN 4
 
 TimerHandle_t timer;
 QueueHandle_t queue;
@@ -47,7 +47,7 @@ void setup()
   pinMode(AMPERE_ONE_PIN, INPUT);
   pinMode(AMPERE_TWO_PIN, INPUT);
   pinMode(AMPERE_THREE_PIN, INPUT);
-  attachInterrupt(BUTTON_RESET_PIN, buttonPressed, FALLING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_RESET_PIN), buttonPressed, FALLING);
   Serial.println("Booting...");
   rtc.begin();
   if (initializeSPIFFS()) {
@@ -94,11 +94,7 @@ void setup()
 
   xTaskCreate(valueConsumer, "consumer", 4096, ( void * ) 1, tskIDLE_PRIORITY, &taskConsumer);
   if (taskConsumer == NULL) {
-    if(button_pressed){
-      resetESP();
-    }
     Serial.println("Couldn't create Task");
-    setRedLight();
     ESP.restart();
   }
 }
@@ -142,6 +138,9 @@ void ledTask(void * parameter){
 }
 
 void readTask(TimerHandle_t xTimer) {
+  if(button_pressed){
+    resetESP();
+  }
   int volt = analogRead(VOLT_PIN);
   int ampere_one = analogRead(AMPERE_ONE_PIN);
   int ampere_two = analogRead(AMPERE_TWO_PIN);

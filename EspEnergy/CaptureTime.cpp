@@ -1,5 +1,6 @@
 #include "captureTime.h"
 
+// SCL 22 SCK 21
 void printDateTime(DateTime dt){
    char dateBuffer[] = "   DD/MM/YYYY   ";
    char timeBuffer[] = "    hh:mm:ss    ";
