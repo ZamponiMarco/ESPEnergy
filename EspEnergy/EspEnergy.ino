@@ -13,7 +13,7 @@
 #define AMPERE_ONE_PIN 32
 #define AMPERE_TWO_PIN 33
 #define AMPERE_THREE_PIN 25
-#define BUTTON_RESET_PIN 4
+#define BUTTON_RESET_PIN 18
 
 TimerHandle_t timer;
 QueueHandle_t queue;
@@ -32,10 +32,10 @@ PubSubClient client(espClient);
 bool sd = false;
 bool wifi = false;
 
-boolean button_pressed = false;
+boolean state = false;
 
 void IRAM_ATTR buttonPressed(){
-  button_pressed = true;
+  state = true;
 }
 
 void setup()
@@ -47,7 +47,7 @@ void setup()
   pinMode(AMPERE_ONE_PIN, INPUT);
   pinMode(AMPERE_TWO_PIN, INPUT);
   pinMode(AMPERE_THREE_PIN, INPUT);
-  attachInterrupt(digitalPinToInterrupt(BUTTON_RESET_PIN), buttonPressed, FALLING);
+  attachInterrupt(BUTTON_RESET_PIN, buttonPressed, FALLING); // An interrupt is fired on each Falling Edge
   Serial.println("Booting...");
   rtc.begin();
   if (initializeSPIFFS()) {
@@ -112,33 +112,31 @@ void ledTask(void * parameter){
   byte busStatus = Wire.endTransmission();
   // Repeat every second
   for(;;){
-
     if(WiFi.status() == WL_CONNECTED){
       setGreenLight();
     }
-
     if(WiFi.status() == WL_CONNECTED && queue != NULL){
       turnOffLed();
       delay(200);
       setBlueLight();
     }
-
     if(WiFi.status() == WL_CONNECTED && busStatus==0){
       setRedLight();
       delay(200);
       setBlueLight();
     }
-
     if(WiFi.status() == WL_DISCONNECTED){
       setRedLight();
     }
-    
     delay(1000);
   }
 }
 
 void readTask(TimerHandle_t xTimer) {
-  if(button_pressed){
+  Serial.println(state);
+  int buttonState = digitalRead(BUTTON_RESET_PIN);
+  Serial.println(buttonState);
+  if(state){
     resetESP();
   }
   int volt = analogRead(VOLT_PIN);

@@ -135,7 +135,7 @@ boolean selectEncryptionType(wifi_auth_mode_t encryption, String ssid, String us
     delay(500);
     Serial.print(".");
     counter += 500;
-    if(counter > 30000){
+    if(counter > 10000){
       break;
     }
   }
