@@ -2,19 +2,15 @@
 #define spiffs_h
 
 #include <SPIFFS.h>
-#include "measurement.h"
 
-typedef struct {
-  char ssid[50];
-  char username[50];
-  char password[50];
-} InternetConfig;
+#include "measurement.h"
+#include "captive_portal.h"
 
 bool initializeSPIFFS();
-void writeToFile(String path, String toWritePassword, String toWriteUsername, String ssid);
+void writeToFile(String path, InternetConfig* conf);
 //void printDirectory(File dir, int numTabs);
 InternetConfig* readFromFile();
-void writeMeasurementToFile();
+void writeMeasurementToFile(Measurement* m);
 Measurement* readMeasurementFromFile();
 void resetESP();
 

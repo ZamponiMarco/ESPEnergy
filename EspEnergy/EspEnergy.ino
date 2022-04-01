@@ -15,6 +15,8 @@
 #define AMPERE_THREE_PIN 25
 #define BUTTON_RESET_PIN 18
 
+//#define DEBUG
+
 TimerHandle_t timer;
 QueueHandle_t queue;
 TaskHandle_t taskConsumer;
@@ -23,7 +25,7 @@ TaskHandle_t consumer_light;
 
 RTC_DS3231 rtc;
 
-static Configuration* conf = new Configuration();
+static InternetConfig* conf = new InternetConfig();
 
 char *clientID = "Building0Test";
 WiFiClient espClient;
@@ -47,7 +49,7 @@ void setup()
   pinMode(AMPERE_ONE_PIN, INPUT);
   pinMode(AMPERE_TWO_PIN, INPUT);
   pinMode(AMPERE_THREE_PIN, INPUT);
-  attachInterrupt(BUTTON_RESET_PIN, buttonPressed, FALLING); // An interrupt is fired on each Falling Edge
+  attachInterrupt(BUTTON_RESET_PIN, buttonPressed, FALLING);
   Serial.println("Booting...");
   rtc.begin();
   if (initializeSPIFFS()) {
@@ -55,28 +57,24 @@ void setup()
     InternetConfig* sdConf = readFromFile();
     if (sdConf != NULL) {
       Serial.println("Connecting from sd...");
+      Serial.print("Username: ");
       Serial.println(sdConf->username);
+      Serial.print("Password: ");
       Serial.println(sdConf->password);
+      Serial.print("SSID: ");
       Serial.println(sdConf->ssid);
-      Measurement* misureSd = readMeasurementFromFile();
-      if (misureSd != NULL) {
-        Serial.println("Reading values from sd...");
-        Serial.println(misureSd->ampere_one);
-        Serial.println(misureSd->ampere_two);
-        Serial.println(misureSd->ampere_three);
-      }
       selectEncryptionType((wifi_auth_mode_t) 3, sdConf->ssid, sdConf->username, sdConf->password);
       wifi = true;
     } else {
       configureDevice(conf);
-      writeToFile("/test.txt" , conf->password, conf->username, conf->ssid);
+      writeToFile("/test.txt", conf);
     }
   } else {
     configureDevice(conf);
-    writeToFile("/test.txt" , conf->password, conf->username, conf->ssid);
   }
-  
-  client.setServer(conf->broker.c_str(), 1883);
+
+  #if !defined(DEBUG)
+  client.setServer(conf->broker, 1883);
   client.connect(clientID);
   Serial.println("Connected to MQTT broker");
 
@@ -85,7 +83,7 @@ void setup()
     Serial.println("Couldn't create Queue");
     ESP.restart();
   }
-  timer = xTimerCreate("Timer", 1000, pdTRUE, (void *)0, readTask);
+  timer = xTimerCreate("Timer", 5000, pdTRUE, (void *)0, readTask);
   if (timer == NULL) {
     Serial.println("Couldn't create Timer");
     ESP.restart();
@@ -97,10 +95,25 @@ void setup()
     Serial.println("Couldn't create Task");
     ESP.restart();
   }
+  #endif
 }
 
 void loop()
 {
+  #if defined(DEBUG)
+  if (Serial.available() > 0) {
+    int incomingByte = Serial.read();
+    if (incomingByte == 'a') {
+      DateTime now = rtc.now();
+      Measurement m = {0, 1, 2, 3, now};
+      writeMeasurementToFile(&m);
+    } else if (incomingByte == 'c') {
+      readMeasurementFromFile();
+    } else if (incomingByte == 'r') {
+      resetESP();
+    }
+  }
+  #endif
 }
 
 void manageLed(){
@@ -167,18 +180,17 @@ void valueConsumer(void *pvParameters)
 }
 
 void sendMqttData(Measurement measurement) {
+  const char* topic = conf->topic;
   if (client.connected() || client.connect(clientID)) {
     Serial.print("Topic is: ");
     Serial.print(conf->topic);
-    if (client.publish(conf->topic.c_str(), toJson(measurement).c_str())) {
+    if (client.publish(topic, toJson(measurement).c_str())) {
       Serial.println(" Publish ok");
       setGreenLight();
     }
     else {
       Serial.println(" Publish failed");
-      writeMeasurementToFile();
     }
   } else{
-    writeMeasurementToFile();
   }
 }

@@ -1,7 +1,7 @@
 #include "captive_portal.h"
 
 WebServer webServer(80);
-Configuration* conf;
+InternetConfig* conf;
 bool is_connected;
 const char *ssidAP = "EnergyCounterESP32 AP";
 int num_ssid = 0;
@@ -14,7 +14,7 @@ void setupNetwork(){
   Serial.println(myIP);
 }
 
-boolean configureDevice(Configuration* input_config) {
+boolean configureDevice(InternetConfig* input_config) {
  conf = input_config;
   scanNetworks(&num_ssid);
   setupNetwork();
@@ -27,11 +27,11 @@ boolean configureDevice(Configuration* input_config) {
 
   webServer.on("/connect", HTTP_POST, []() {
       Serial.println("Received configuration fields");
-      conf->ssid = WiFi.SSID(webServer.arg("network").toInt());
-      conf->username = webServer.arg("username");
-      conf->password = webServer.arg("password");
-      conf->broker = webServer.arg("broker");
-      conf->topic = webServer.arg("topic");
+      WiFi.SSID(webServer.arg("network").toInt()).toCharArray(conf->ssid, 50);
+      webServer.arg("username").toCharArray(conf->username, 50);
+      webServer.arg("password").toCharArray(conf->password, 50);
+      webServer.arg("broker").toCharArray(conf->broker, 50);
+      webServer.arg("topic").toCharArray(conf->topic, 50);
       webServer.send(200, "text/plain", "Done" );
       Serial.println("Disabling access point...");
       WiFi.softAPdisconnect(true);
@@ -115,18 +115,18 @@ void scanNetworks(int *num_ssid) {
   }
 }
 
-boolean selectEncryptionType(wifi_auth_mode_t encryption, String ssid, String username, String password) {
+boolean selectEncryptionType(wifi_auth_mode_t encryption, const char* ssid, const char* username, const char* password) {
   Serial.print("Connecting to ");
   Serial.println(ssid);
   switch (encryption) {
     case WIFI_AUTH_OPEN:
-      connectOpenNetwork(ssid.c_str());
+      connectOpenNetwork(ssid);
       break;
     case WIFI_AUTH_WPA2_ENTERPRISE:
-      connectWpa2Enterprise(ssid.c_str(), username.c_str(), password.c_str());
+      connectWpa2Enterprise(ssid, username, password);
       break;
     default:
-      connectWpa(ssid.c_str(), password.c_str());
+      connectWpa(ssid, password);
       break;
   }
   int counter = 0;

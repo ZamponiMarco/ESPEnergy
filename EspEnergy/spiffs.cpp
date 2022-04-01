@@ -4,10 +4,8 @@
 #include "measurement.h"
 
 File root;
-String fileContent;
-byte *internetConfig = NULL;
-Measurement *measurement = NULL;
 byte *m = NULL;
+uint8_t* inet_config_buf = NULL;
 
 bool initializeSPIFFS()
 {
@@ -43,33 +41,24 @@ bool initializeSPIFFS()
   return true;
 }
 
-void writeMeasurementToFile()
+void writeMeasurementToFile(Measurement* m)
 {
-  root = SPIFFS.open("/measurement.txt", FILE_WRITE);
-  Serial.print("done1");
+  root = SPIFFS.open("/measurement.txt", FILE_APPEND);
   if (root)
   {
-    Serial.print("done2");
-    root.write((uint8_t *)&measurement, sizeof(Measurement));
+    root.write((uint8_t *)m, sizeof(Measurement));
     root.flush();
-    Serial.println("done3");
     root.close();
   }
 }
 
-void writeToFile(String path, String toWritePassword, String toWriteUsername, String toWriteSsid)
+void writeToFile(String path, InternetConfig* conf)
 {
   root = SPIFFS.open(path.c_str(), FILE_WRITE);
   if (root)
   {
-    InternetConfig config;
-    // mi serve: ssid, username, password, tipo di cifratura
-    toWriteUsername.toCharArray(config.username, toWriteUsername.length() + 1);
-    toWritePassword.toCharArray(config.password, toWritePassword.length() + 1);
-    toWriteSsid.toCharArray(config.ssid, toWriteSsid.length() + 1);
-    root.write((uint8_t *)&config, sizeof(InternetConfig));
+    root.write((uint8_t *)conf, sizeof(InternetConfig));
     root.flush();
-    /* close the file */
     root.close();
   }
   else
@@ -102,22 +91,17 @@ void writeToFile(String path, String toWritePassword, String toWriteUsername, St
 
 InternetConfig *readFromFile()
 {
+  if (!SPIFFS.exists("/test.txt")) {
+    Serial.println("Config doesn't exist");
+    return NULL;
+  }
   root = SPIFFS.open("/test.txt");
-  int bufferMeasurement;
-  String datas;
   if (root)
   {
-    while (root.available())
-    {
-      if (internetConfig != NULL)
-      {
-        free(internetConfig);
-      }
-      internetConfig = (byte *)malloc(sizeof(InternetConfig));
-      root.read(internetConfig, sizeof(InternetConfig));
-    }
+    inet_config_buf = (byte *)malloc(sizeof(InternetConfig));
+    root.read(inet_config_buf, sizeof(InternetConfig));
     root.close();
-    return (InternetConfig *)internetConfig;
+    return (InternetConfig *)inet_config_buf;
   }
   else
   {
@@ -128,20 +112,18 @@ InternetConfig *readFromFile()
 
 Measurement *readMeasurementFromFile()
 {
-  root = SPIFFS.open("/test.txt");
+  root = SPIFFS.open("/measurement.txt");
   if (root)
   {
     while (root.available())
     {
-      if (internetConfig != NULL)
-      {
-        free(internetConfig);
-      }
       m = (byte *)malloc(sizeof(Measurement));
       root.read(m, sizeof(Measurement));
+      Serial.print("Ampere: ");
       Serial.println(((Measurement *)m)->ampere_one);
     }
     root.close();
+    SPIFFS.remove("/measurement.txt");
     return (Measurement *)m;
   }
   else
