@@ -4,67 +4,65 @@
 #include "measurement.h"
 
 File root;
-String fileContent;
-byte *internetConfig = NULL;
-Measurement* measurement = NULL;
 byte *m = NULL;
+uint8_t* inet_config_buf = NULL;
 
-bool initializeSPIFFS(){
-Serial.println(F("Inizializing FS..."));
-    if (SPIFFS.begin()){
-        Serial.println(F("done."));
-    }else{
-        Serial.println(F("fail."));
-    }
- 
-    // To format all space in SPIFFS
-    // SPIFFS.format()
- 
-    // Get all information of your SPIFFS
- 
-    unsigned int totalBytes = SPIFFS.totalBytes();
-    unsigned int usedBytes = SPIFFS.usedBytes();
- 
-    Serial.println("File sistem info.");
- 
-    Serial.print("Total space:      ");
-    Serial.print(totalBytes);
-    Serial.println("byte");
- 
-    Serial.print("Total space used: ");
-    Serial.print(usedBytes);
-    Serial.println("byte");
- 
-    Serial.println();
-    return true;
+bool initializeSPIFFS()
+{
+  Serial.println(F("Inizializing FS..."));
+  if (SPIFFS.begin())
+  {
+    Serial.println(F("done."));
+  }
+  else
+  {
+    Serial.println(F("fail."));
+  }
+
+  // To format all space in SPIFFS
+  // SPIFFS.format()
+
+  // Get all information of your SPIFFS
+
+  unsigned int totalBytes = SPIFFS.totalBytes();
+  unsigned int usedBytes = SPIFFS.usedBytes();
+
+  Serial.println("File sistem info.");
+
+  Serial.print("Total space:      ");
+  Serial.print(totalBytes);
+  Serial.println("byte");
+
+  Serial.print("Total space used: ");
+  Serial.print(usedBytes);
+  Serial.println("byte");
+
+  Serial.println();
+  return true;
 }
 
-void writeMeasurementToFile(){
-  root = SPIFFS.open("measurement.txt", FILE_WRITE);
-  Serial.print("done1");
-  if (root) {
-    Serial.print("done2");
-    root.write((uint8_t*) &measurement,sizeof(Measurement));
+void writeMeasurementToFile(Measurement* m)
+{
+  root = SPIFFS.open("/measurement.txt", FILE_APPEND);
+  if (root)
+  {
+    root.write((uint8_t *)m, sizeof(Measurement));
     root.flush();
-    Serial.println("done3");
     root.close();
   }
-} 
+}
 
-void writeToFile(String path, String toWritePassword, String toWriteUsername, String toWriteSsid)
+void writeToFile(String path, InternetConfig* conf)
 {
   root = SPIFFS.open(path.c_str(), FILE_WRITE);
-  if (root) {
-    InternetConfig config;
-    //mi serve: ssid, username, password, tipo di cifratura
-    toWriteUsername.toCharArray(config.username, toWriteUsername.length()+1);
-    toWritePassword.toCharArray(config.password, toWritePassword.length()+1);
-    toWriteSsid.toCharArray(config.ssid, toWriteSsid.length()+1);
-    root.write((uint8_t*) &config,sizeof(InternetConfig));
+  if (root)
+  {
+    root.write((uint8_t *)conf, sizeof(InternetConfig));
     root.flush();
-   /* close the file */
     root.close();
-  } else {
+  }
+  else
+  {
     Serial.println("error opening file.txt");
   }
 }
@@ -91,41 +89,58 @@ void writeToFile(String path, String toWritePassword, String toWriteUsername, St
    }
 }*/
 
-InternetConfig* readFromFile(){
+InternetConfig *readFromFile()
+{
+  if (!SPIFFS.exists("/test.txt")) {
+    Serial.println("Config doesn't exist");
+    return NULL;
+  }
   root = SPIFFS.open("/test.txt");
-  int bufferMeasurement;
-  String datas;
-  if (root) {    
-    while (root.available()) {
-      if(internetConfig != NULL){
-        free(internetConfig);
-      }
-      internetConfig = (byte*) malloc(sizeof(InternetConfig));
-      root.read(internetConfig, sizeof(InternetConfig));
-    }
+  if (root)
+  {
+    inet_config_buf = (byte *)malloc(sizeof(InternetConfig));
+    root.read(inet_config_buf, sizeof(InternetConfig));
     root.close();
-    return (InternetConfig*)internetConfig;
-  } else {
+    return (InternetConfig *)inet_config_buf;
+  }
+  else
+  {
     Serial.println("error opening file .txt");
     return NULL;
   }
 }
 
-Measurement* readMeasurementFromFile(){
-  root = SPIFFS.open("/test.txt");
-  if (root) {    
-    while (root.available()) {
-      if(internetConfig != NULL){
-        free(internetConfig);
-      }
-      m = (byte*) malloc(sizeof(Measurement));
+Measurement *readMeasurementFromFile()
+{
+  root = SPIFFS.open("/measurement.txt");
+  if (root)
+  {
+    while (root.available())
+    {
+      m = (byte *)malloc(sizeof(Measurement));
       root.read(m, sizeof(Measurement));
+      Serial.print("Ampere: ");
       Serial.println(((Measurement *)m)->ampere_one);
     }
     root.close();
+    SPIFFS.remove("/measurement.txt");
     return (Measurement *)m;
-  } else {
+  }
+  else
+  {
     Serial.println("error opening file .txt");
     return NULL;
   }
+}
+
+void resetESP(){
+  if (SPIFFS.exists("/test.txt"))
+  {
+    SPIFFS.remove("/test.txt");
+  }
+  if (SPIFFS.exists("/measurement.txt"))
+  {
+    SPIFFS.remove("/measurement.txt");
+  }
+  ESP.restart();
 }

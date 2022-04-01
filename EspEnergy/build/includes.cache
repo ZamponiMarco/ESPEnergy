@@ -80,11 +80,6 @@
     "Includepath": null
   },
   {
-    "Sourcefile": "c:\\Users\\User\\Desktop\\Repository GitHub\\ESPEnergy\\EspEnergy\\build\\sketch\\microSdCard.cpp",
-    "Include": "",
-    "Includepath": null
-  },
-  {
     "Sourcefile": "c:\\Users\\User\\Desktop\\Repository GitHub\\ESPEnergy\\EspEnergy\\build\\sketch\\spiffs.cpp",
     "Include": "",
     "Includepath": null

@@ -8,6 +8,7 @@
 #include "captureTime.h"
 #include "utils.h"
 #include "rgbLed.h"
+#include "time.h"
 
 #define VOLT_PIN 35
 #define AMPERE_ONE_PIN 32
@@ -23,6 +24,10 @@ TaskHandle_t taskConsumer;
 BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 TaskHandle_t consumer_light;
 
+const long  gmtOffset_sec = 3600;
+const int   daylightOffset_sec = 3600;
+const char* ntpServer = "pool.ntp.org";
+
 RTC_DS3231 rtc;
 
 static InternetConfig* conf = new InternetConfig();
@@ -35,6 +40,7 @@ bool sd = false;
 bool wifi = false;
 
 boolean state = false;
+struct tm timeinfo;
 
 void IRAM_ATTR buttonPressed(){
   state = true;
@@ -51,7 +57,7 @@ void setup()
   pinMode(AMPERE_THREE_PIN, INPUT);
   attachInterrupt(BUTTON_RESET_PIN, buttonPressed, FALLING);
   Serial.println("Booting...");
-  rtc.begin();
+  
   if (initializeSPIFFS()) {
     sd = true;
     InternetConfig* sdConf = readFromFile();
@@ -72,12 +78,25 @@ void setup()
   } else {
     configureDevice(conf);
   }
+  rtc.begin();
 
   #if !defined(DEBUG)
   client.setServer(conf->broker, 1883);
   client.connect(clientID);
-  Serial.println("Connected to MQTT broker");
 
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  if (rtc.lostPower()) {
+    if(!getLocalTime(&timeinfo)){
+    Serial.println("Failed to obtain time");
+    return;
+  }
+  Serial.println("Actual time:");
+  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+  rtc.adjust(DateTime(timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec));
+  }
+
+  Serial.println("Connected to MQTT broker!");
+    
   queue = xQueueCreate(10, sizeof(Measurement));
   if (queue == NULL) {
     Serial.println("Couldn't create Queue");
@@ -88,6 +107,7 @@ void setup()
     Serial.println("Couldn't create Timer");
     ESP.restart();
   }
+  
   xTimerStartFromISR(timer, (BaseType_t*)0);
 
   xTaskCreate(valueConsumer, "consumer", 4096, ( void * ) 1, tskIDLE_PRIORITY, &taskConsumer);
