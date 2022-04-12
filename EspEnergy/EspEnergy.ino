@@ -1,7 +1,7 @@
 #include <PubSubClient.h>
 #include <WiFiClient.h>
 #include <WiFi.h>
-
+#include <TimeLib.h>
 #include "captive_portal.h"
 #include "spiffs.h"
 #include "measurement.h"
@@ -96,7 +96,10 @@ void setup()
   }
 
   Serial.println("Connected to MQTT broker!");
-    
+  
+  //setSyncProvider(rtcAdjustNtp);
+  //setSyncInterval(6000);
+  
   queue = xQueueCreate(10, sizeof(Measurement));
   if (queue == NULL) {
     Serial.println("Couldn't create Queue");
@@ -176,8 +179,12 @@ void readTask(TimerHandle_t xTimer) {
   int ampere_one = analogRead(AMPERE_ONE_PIN);
   int ampere_two = analogRead(AMPERE_TWO_PIN);
   int ampere_three = analogRead(AMPERE_THREE_PIN);
+
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  rtc.adjust(DateTime(timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec));
   DateTime now = rtc.now();
   printDateTime(now);
+ 
   Measurement misura = {volt, ampere_one, ampere_two, ampere_three, now};
   if (xQueueSendFromISR(queue, &misura, &xHigherPriorityTaskWoken )) {
     Serial.println("Object sent");
@@ -214,3 +221,11 @@ void sendMqttData(Measurement measurement) {
   } else{
   }
 }
+
+/*time_t rtcAdjustNtp()
+{
+    time_t ret = tm->tm_sec + tm->tm_min*60 + tm->tm_hour*3600 + tm->tm_yday*86400;
+    ret += ((time_t)31536000) * (tm->tm_year-70);
+    ret += ((tm->tm_year-69)/4)*86400 - ((tm->tm_year-1)/100)*86400 + ((tm->tm_year+299)/400)*86400;
+    return ret;
+}*/
