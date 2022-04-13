@@ -97,8 +97,8 @@ void setup()
 
   Serial.println("Connected to MQTT broker!");
   
-  //setSyncProvider(rtcAdjustNtp);
-  //setSyncInterval(6000);
+  setSyncProvider(rtcAdjustNtp);
+  setSyncInterval(6000);
   
   queue = xQueueCreate(10, sizeof(Measurement));
   if (queue == NULL) {
@@ -180,8 +180,6 @@ void readTask(TimerHandle_t xTimer) {
   int ampere_two = analogRead(AMPERE_TWO_PIN);
   int ampere_three = analogRead(AMPERE_THREE_PIN);
 
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-  rtc.adjust(DateTime(timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec));
   DateTime now = rtc.now();
   printDateTime(now);
  
@@ -222,10 +220,11 @@ void sendMqttData(Measurement measurement) {
   }
 }
 
-/*time_t rtcAdjustNtp()
+time_t rtcAdjustNtp()
 {
-    time_t ret = tm->tm_sec + tm->tm_min*60 + tm->tm_hour*3600 + tm->tm_yday*86400;
-    ret += ((time_t)31536000) * (tm->tm_year-70);
-    ret += ((tm->tm_year-69)/4)*86400 - ((tm->tm_year-1)/100)*86400 + ((tm->tm_year+299)/400)*86400;
+    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+    time_t ret = timeinfo.tm_sec + timeinfo.tm_min*60 + timeinfo.tm_hour*3600 + timeinfo.tm_yday*86400;
+    ret += ((time_t)31536000) * (timeinfo.tm_year-70);
+    ret += ((timeinfo.tm_year-69)/4)*86400 - ((timeinfo.tm_year-1)/100)*86400 + ((timeinfo.tm_year+299)/400)*86400;
     return ret;
-}*/
+}
