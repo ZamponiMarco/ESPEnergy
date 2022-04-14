@@ -2,13 +2,13 @@
 #include <WiFiClient.h>
 #include <WiFi.h>
 #include <TimeLib.h>
+
 #include "captive_portal.h"
 #include "spiffs.h"
 #include "measurement.h"
 #include "captureTime.h"
 #include "utils.h"
 #include "rgbLed.h"
-#include "time.h"
 
 #define VOLT_PIN 35
 #define AMPERE_ONE_PIN 32
@@ -23,6 +23,7 @@ QueueHandle_t queue;
 TaskHandle_t taskConsumer;
 BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 TaskHandle_t consumer_light;
+TimerHandle_t syncTimer;
 
 const long  gmtOffset_sec = 3600;
 const int   daylightOffset_sec = 3600;
@@ -96,10 +97,7 @@ void setup()
   }
 
   Serial.println("Connected to MQTT broker!");
-  
-  setSyncProvider(rtcAdjustNtp);
-  setSyncInterval(6000);
-  
+ 
   queue = xQueueCreate(10, sizeof(Measurement));
   if (queue == NULL) {
     Serial.println("Couldn't create Queue");
@@ -118,6 +116,14 @@ void setup()
     Serial.println("Couldn't create Task");
     ESP.restart();
   }
+
+  syncTimer = xTimerCreate("TimerSync", 3600*1000, pdTRUE, (void *)0, syncTime);
+  if (syncTimer == NULL) {
+    Serial.println("Couldn't create Timer");
+    ESP.restart();
+  }
+  
+  xTimerStart(syncTimer,0);
   #endif
 }
 
@@ -145,7 +151,7 @@ void manageLed(){
 }
 
 void ledTask(void * parameter){
-  byte busStatus = Wire.endTransmission();
+  // byte busStatus = Wire.endTransmission();
   // Repeat every second
   for(;;){
     if(WiFi.status() == WL_CONNECTED){
@@ -156,11 +162,11 @@ void ledTask(void * parameter){
       delay(200);
       setBlueLight();
     }
-    if(WiFi.status() == WL_CONNECTED && busStatus==0){
+   /* if(WiFi.status() == WL_CONNECTED && busStatus==0){
       setRedLight();
       delay(200);
       setBlueLight();
-    }
+    }*/
     if(WiFi.status() == WL_DISCONNECTED){
       setRedLight();
     }
@@ -169,9 +175,7 @@ void ledTask(void * parameter){
 }
 
 void readTask(TimerHandle_t xTimer) {
-  Serial.println(state);
   int buttonState = digitalRead(BUTTON_RESET_PIN);
-  Serial.println(buttonState);
   if(state){
     resetESP();
   }
@@ -220,11 +224,8 @@ void sendMqttData(Measurement measurement) {
   }
 }
 
-time_t rtcAdjustNtp()
-{
-    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-    time_t ret = timeinfo.tm_sec + timeinfo.tm_min*60 + timeinfo.tm_hour*3600 + timeinfo.tm_yday*86400;
-    ret += ((time_t)31536000) * (timeinfo.tm_year-70);
-    ret += ((timeinfo.tm_year-69)/4)*86400 - ((timeinfo.tm_year-1)/100)*86400 + ((timeinfo.tm_year+299)/400)*86400;
-    return ret;
+void syncTime(TimerHandle_t xTimer){
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  getLocalTime(&timeinfo);
+  rtc.adjust(DateTime(timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec));
 }
