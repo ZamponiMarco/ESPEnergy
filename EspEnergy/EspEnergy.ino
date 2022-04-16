@@ -24,6 +24,7 @@ TaskHandle_t taskConsumer;
 BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 TaskHandle_t consumer_light;
 TimerHandle_t syncTimer;
+TimerHandle_t buttonPresstTime;
 
 const long  gmtOffset_sec = 3600;
 const int   daylightOffset_sec = 3600;
@@ -44,7 +45,7 @@ boolean state = false;
 struct tm timeinfo;
 
 void IRAM_ATTR buttonPressed(){
-  state = true;
+  xTimerStart(buttonPresstTime,0);
 }
 
 void setup()
@@ -124,6 +125,12 @@ void setup()
   }
   
   xTimerStart(syncTimer,0);
+
+  buttonPresstTime = xTimerCreate("buttonTimerPress", 1000, pdFALSE, (void *)0, onButtonPressed);
+  if (buttonPresstTime == NULL) {
+  Serial.println("Couldn't create Timer");
+  ESP.restart();
+  }
   #endif
 }
 
@@ -175,10 +182,6 @@ void ledTask(void * parameter){
 }
 
 void readTask(TimerHandle_t xTimer) {
-  int buttonState = digitalRead(BUTTON_RESET_PIN);
-  if(state){
-    resetESP();
-  }
   int volt = analogRead(VOLT_PIN);
   int ampere_one = analogRead(AMPERE_ONE_PIN);
   int ampere_two = analogRead(AMPERE_TWO_PIN);
@@ -228,4 +231,9 @@ void syncTime(TimerHandle_t xTimer){
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
   getLocalTime(&timeinfo);
   rtc.adjust(DateTime(timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec));
+}
+
+void onButtonPressed(TimerHandle_t xTimer){
+  int buttonState = digitalRead(BUTTON_RESET_PIN);
+  resetESP();
 }
