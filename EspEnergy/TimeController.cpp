@@ -1,4 +1,6 @@
-#include "captureTime.h"
+#include "TimeController.h"
+
+RTC_DS3231 rtc;
 
 // SCL 22 SCK 21
 void printDateTime(DateTime dt){

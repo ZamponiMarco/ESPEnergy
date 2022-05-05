@@ -1,14 +1,15 @@
-#include "captive_portal.h"
+#include "ConnectionController.h"
+
+InternetConfig *conf = new InternetConfig();
 
 WebServer webServer(80);
-InternetConfig* conf;
-bool is_connected;
-const char *ssidAP = "EnergyCounterESP32 AP";
 int num_ssid = 0;
+
+bool is_connected;
 
 void setupNetwork(){
   Serial.println("Starting AP mode...");
-  WiFi.softAP(ssidAP);
+  WiFi.softAP(SSID_AP);
   IPAddress myIP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
   Serial.println(myIP);
@@ -45,7 +46,7 @@ boolean configureDevice(InternetConfig* input_config) {
     webServer.handleClient();
     delay(2);
   }
-  return true;
+  return is_connected;
 }
 
 String indexPage(int num_ssid) {
@@ -133,19 +134,20 @@ boolean selectEncryptionType(wifi_auth_mode_t encryption, const char* ssid, cons
   while (WiFi.status() != WL_CONNECTED) {
     //If after 30 second it doesn't connect, it calls configureDevice()
     delay(500);
-    Serial.print(".");
     counter += 500;
-    if(counter > 10000){
-      break;
+    if(counter > 30000){
+      return false;
     }
   }
   if(WiFi.status() != WL_CONNECTED){
     Serial.println("Timed out");
+    return false;
   }else{
     Serial.println("");
     Serial.println("WiFi connected");
     Serial.println("IP address: ");
     Serial.println(WiFi.localIP());
+    return true;
   }
 }
 
@@ -163,7 +165,6 @@ void connectWpa2Enterprise(const char* ssid, const char* username, const char* p
   esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)username, strlen(username));
   esp_wifi_sta_wpa2_ent_set_username((uint8_t *)username, strlen(username));
   esp_wifi_sta_wpa2_ent_set_password((uint8_t *)password, strlen(password));
-  esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();
-  esp_wifi_sta_wpa2_ent_enable(&config);
+  esp_wifi_sta_wpa2_ent_enable();
   WiFi.begin(ssid);
 }

@@ -1,7 +1,4 @@
-#include <SPIFFS.h>
-
-#include "spiffs.h"
-#include "measurement.h"
+#include "FlashController.h"
 
 File root;
 byte *m = NULL;

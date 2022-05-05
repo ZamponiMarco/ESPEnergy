@@ -1,10 +1,9 @@
-#ifndef spiffs_h
-#define spiffs_h
+#pragma once
 
 #include <SPIFFS.h>
 
-#include "measurement.h"
-#include "captive_portal.h"
+#include "Measurement.h"
+#include "ConnectionController.h"
 
 bool initializeSPIFFS();
 void writeToFile(String path, InternetConfig* conf);
@@ -13,5 +12,3 @@ InternetConfig* readFromFile();
 void writeMeasurementToFile(Measurement* m);
 Measurement* readMeasurementFromFile();
 void resetESP();
-
-#endif
