@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Arduino.h>
 #include <WiFi.h>
+
+#include "FlashController.h"
 
 #define RED_LIGHT_PIN 4
 #define GREEN_LIGHT_PIN 16

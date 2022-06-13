@@ -7,8 +7,7 @@
 
 bool initializeSPIFFS();
 void writeToFile(String path, InternetConfig* conf);
-//void printDirectory(File dir, int numTabs);
 InternetConfig* readFromFile();
 void writeMeasurementToFile(Measurement* m);
-Measurement* readMeasurementFromFile();
+void readMeasurementFromFile();
 void resetESP();

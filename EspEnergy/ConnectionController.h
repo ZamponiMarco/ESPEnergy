@@ -17,7 +17,7 @@ typedef struct {
 extern InternetConfig *conf;
 
 void setupNetwork();
-boolean configureDevice(InternetConfig* input_config);
+boolean configureDevice();
 String indexPage(int num_ssid);
 String getNetworks(int num_ssid);
 void scanNetworks(int *num_ssid);

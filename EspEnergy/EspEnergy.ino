@@ -1,30 +1,20 @@
 #include "ConnectionController.h"
 #include "FlashController.h"
-#include "Measurement.h"
+#include "MeasurementController.h"
 #include "TimeController.h"
 #include "LedController.h"
 
 #define BUTTON_RESET_PIN 18
 
-TimerHandle_t timer;
-TaskHandle_t taskConsumer;
-TaskHandle_t consumer_light;
-TimerHandle_t syncTimer;
-TimerHandle_t buttonPresstTime;
-
-const long gmtOffset_sec = 3600;
-const int daylightOffset_sec = 3600;
-const char *ntpServer = "pool.ntp.org";
-
-bool sd = false;
-bool wifi = false;
-
-boolean state = false;
-struct tm timeinfo;
+TimerHandle_t thMeasurementProducer;
+TaskHandle_t thMeasurementConsumer;
+TaskHandle_t thLedController;
+TimerHandle_t thTimerSync;
+TimerHandle_t thButtonPressed;
 
 void IRAM_ATTR buttonPressed()
 {
-  xTimerStart(buttonPresstTime, 0);
+  xTimerStart(thButtonPressed, 0);
 }
 
 void setup()
@@ -40,28 +30,30 @@ void setup()
 
   if (initializeSPIFFS())
   {
-    sd = true;
-    InternetConfig *sdConf = readFromFile();
+    InternetConfig* sdConf = readFromFile();
     if (sdConf != NULL)
     {
+      conf = sdConf;
       Serial.println("Connecting from sd...");
       Serial.print("Username: ");
-      Serial.println(sdConf->username);
+      Serial.println(conf->username);
       Serial.print("Password: ");
-      Serial.println(sdConf->password);
+      Serial.println(conf->password);
       Serial.print("SSID: ");
-      Serial.println(sdConf->ssid);
-      wifi = selectEncryptionType((wifi_auth_mode_t)3, sdConf->ssid, sdConf->username, sdConf->password);
+      Serial.println(conf->ssid);
+      selectEncryptionType((wifi_auth_mode_t)3, conf->ssid, conf->username, conf->password);
     }
     else
     {
-      configureDevice(conf);
+      conf = new InternetConfig();
+      configureDevice();
       writeToFile("/test.txt", conf);
     }
   }
   else
   {
-    configureDevice(conf);
+    conf = new InternetConfig();
+    configureDevice();
   }
   
   if (!rtc.begin()) {
@@ -71,63 +63,14 @@ void setup()
   client.setServer(conf->broker, 1883);
   client.connect(CLIENT_ID);
 
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  readMeasurementFromFile();
+
   if (rtc.lostPower())
   {
-    if (!getLocalTime(&timeinfo))
-    {
-      Serial.println("Failed to obtain time");
-      return;
-    }
-    rtc.adjust(DateTime(timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec));
-    Serial.println("Actual time:");
-    Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+    syncRTCtoNTP();
   }
 
-  xTaskCreate(ledTask, "consumer_light", 2048, NULL, 3, &consumer_light);
-  if (consumer_light == NULL)
-  {
-    Serial.println("Couldn't create Task");
-    ESP.restart();
-  }
-
-  queue = xQueueCreate(10, sizeof(Measurement));
-  if (queue == NULL)
-  {
-    Serial.println("Couldn't create Queue");
-    ESP.restart();
-  }
-  timer = xTimerCreate("Timer", 5000, pdTRUE, (void *)0, readTask);
-  if (timer == NULL)
-  {
-    Serial.println("Couldn't create Timer");
-    ESP.restart();
-  }
-
-  xTimerStartFromISR(timer, (BaseType_t *)0);
-
-  xTaskCreate(valueConsumer, "consumer", 4096, (void *)1, 10, &taskConsumer);
-  if (taskConsumer == NULL)
-  {
-    Serial.println("Couldn't create Task");
-    ESP.restart();
-  }
-
-  syncTimer = xTimerCreate("TimerSync", 3600 * 1000, pdTRUE, (void *)0, syncTime);
-  if (syncTimer == NULL)
-  {
-    Serial.println("Couldn't create Timer");
-    ESP.restart();
-  }
-
-  xTimerStart(syncTimer, 0);
-
-  buttonPresstTime = xTimerCreate("buttonTimerPress", 1000, pdFALSE, (void *)0, onButtonPressed);
-  if (buttonPresstTime == NULL)
-  {
-    Serial.println("Couldn't create Timer");
-    ESP.restart();
-  }
+  setupTasks();
 }
 
 void loop()
@@ -135,15 +78,80 @@ void loop()
   vTaskDelete(NULL);
 }
 
-void syncTime(TimerHandle_t xTimer)
-{
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-  getLocalTime(&timeinfo);
-  rtc.adjust(DateTime(timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec));
-}
-
 void onButtonPressed(TimerHandle_t xTimer)
 {
   int buttonState = digitalRead(BUTTON_RESET_PIN);
   resetESP();
+}
+
+void setupTasks() {
+  // ##########################
+  // ### Measurements Tasks ###
+
+  // Queue
+
+  queue = xQueueCreate(10, sizeof(Measurement));
+  if (queue == NULL)
+  {
+    Serial.println("Couldn't create Queue");
+    ESP.restart();
+  }
+
+  // Measurement Producer
+  
+  thMeasurementProducer = xTimerCreate("Timer", 5000, pdTRUE, (void *)0, readTask);
+  if (thMeasurementProducer == NULL)
+  {
+    Serial.println("Couldn't create Timer");
+    ESP.restart();
+  }
+
+  xTimerStartFromISR(thMeasurementProducer, (BaseType_t *)0);
+
+  // Measurement Consumer
+
+  xTaskCreate(valueConsumer, "consumer", 4096, (void *)1, 10, &thMeasurementConsumer);
+  if (thMeasurementConsumer == NULL)
+  {
+    Serial.println("Couldn't create Task");
+    ESP.restart();
+  }
+
+  // ### End Measurements Tasks ###
+  // ##############################
+
+  // ####################
+  // ### System Tasks ###
+
+  // LED Controller
+  
+  xTaskCreate(ledTask, "consumer_light", 2048, NULL, 3, &thLedController);
+  if (thLedController == NULL)
+  {
+    Serial.println("Couldn't create Task");
+    ESP.restart();
+  }
+
+  // RTC Time Sync to NTP
+
+  thTimerSync = xTimerCreate("TimerSync", 3600 * 1000, pdTRUE, (void *)0, syncTime);
+  if (thTimerSync == NULL)
+  {
+    Serial.println("Couldn't create Timer");
+    ESP.restart();
+  }
+
+  xTimerStart(thTimerSync, 0);
+
+  // Reset Button
+
+  thButtonPressed = xTimerCreate("buttonTimerPress", 1000, pdFALSE, (void *)0, onButtonPressed);
+  if (thButtonPressed == NULL)
+  {
+    Serial.println("Couldn't create Timer");
+    ESP.restart();
+  }
+
+  // ### End System Tasks ###
+  // ########################
 }

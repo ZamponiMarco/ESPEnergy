@@ -16,11 +16,6 @@ bool initializeSPIFFS()
     Serial.println(F("fail."));
   }
 
-  // To format all space in SPIFFS
-  // SPIFFS.format()
-
-  // Get all information of your SPIFFS
-
   unsigned int totalBytes = SPIFFS.totalBytes();
   unsigned int usedBytes = SPIFFS.usedBytes();
 
@@ -64,28 +59,6 @@ void writeToFile(String path, InternetConfig* conf)
   }
 }
 
-/*void printDirectory(File dir, int numTabs) {
-  while(true) {
-     File entry =  dir.openNextFile();
-     if (! entry) {
-       break;
-     }
-     for (uint8_t i=0; i<numTabs; i++) {
-       Serial.print('\t');   // we'll have a nice indentation
-     }
-     // Print the name
-     Serial.print(entry.name());
-     if (entry.isDirectory()) {
-       Serial.println("/");
-       printDirectory(entry, numTabs+1);
-     } else {
-       Serial.print("\t\t");
-       Serial.println(entry.size());
-     }
-     entry.close();
-   }
-}*/
-
 InternetConfig *readFromFile()
 {
   if (!SPIFFS.exists("/test.txt")) {
@@ -107,12 +80,14 @@ InternetConfig *readFromFile()
   }
 }
 
-Measurement *readMeasurementFromFile()
+void readMeasurementFromFile()
 {
   root = SPIFFS.open("/measurement.txt");
-  if (root)
-  {
-    while (root.available())
+  if (!root) {
+    Serial.println("error opening file .txt");
+    return;
+  }
+  while (root.available())
     {
       m = (byte *)malloc(sizeof(Measurement));
       root.read(m, sizeof(Measurement));
@@ -121,13 +96,6 @@ Measurement *readMeasurementFromFile()
     }
     root.close();
     SPIFFS.remove("/measurement.txt");
-    return (Measurement *)m;
-  }
-  else
-  {
-    Serial.println("error opening file .txt");
-    return NULL;
-  }
 }
 
 void resetESP(){

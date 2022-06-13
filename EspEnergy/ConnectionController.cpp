@@ -1,6 +1,6 @@
 #include "ConnectionController.h"
 
-InternetConfig *conf = new InternetConfig();
+InternetConfig *conf;
 
 WebServer webServer(80);
 int num_ssid = 0;
@@ -15,8 +15,7 @@ void setupNetwork(){
   Serial.println(myIP);
 }
 
-boolean configureDevice(InternetConfig* input_config) {
- conf = input_config;
+boolean configureDevice() {
   scanNetworks(&num_ssid);
   setupNetwork();
   Serial.println("Starting web server...");

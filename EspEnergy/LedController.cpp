@@ -1,9 +1,5 @@
 #include "LedController.h"
 
-int red_light_pin = 4;
-int green_light_pin = 16;
-int blue_light_pin = 17;
-
 void setupLed(){
     pinMode(RED_LIGHT_PIN, OUTPUT);
     pinMode(GREEN_LIGHT_PIN, OUTPUT);
