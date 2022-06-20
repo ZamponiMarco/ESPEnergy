@@ -17,6 +17,7 @@ void syncRTCtoNTP() {
   rtc.adjust(DateTime(timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec));
 }
 
+// Time Sync Task
 void syncTime(TimerHandle_t xTimer)
 {
   syncRTCtoNTP();

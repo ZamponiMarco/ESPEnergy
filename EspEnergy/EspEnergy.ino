@@ -19,6 +19,7 @@ void IRAM_ATTR buttonPressed()
 
 void setup()
 {
+  // Setting up serial and pin modes
   Serial.begin(115200);
   pinMode(BUTTON_RESET_PIN, INPUT_PULLUP);
   pinMode(VOLT_PIN, INPUT);
@@ -26,8 +27,9 @@ void setup()
   pinMode(AMPERE_TWO_PIN, INPUT);
   pinMode(AMPERE_THREE_PIN, INPUT);
   attachInterrupt(BUTTON_RESET_PIN, buttonPressed, FALLING);
-  Serial.println("Booting...");
 
+  // Configuring Flash Memory and WiFi connection
+  Serial.println("Booting...");
   if (initializeSPIFFS())
   {
     InternetConfig* sdConf = readFromFile();
@@ -55,32 +57,38 @@ void setup()
     conf = new InternetConfig();
     configureDevice();
   }
-  
+
+  // Configuring RTC module
   if (!rtc.begin()) {
     Serial.println("Couldn't find RTC");
   }
 
+  // Configuring MQTT connection
   client.setServer(conf->broker, 1883);
   client.connect(CLIENT_ID);
 
+  // Handling all saved unsent measurements from last session
   readMeasurementFromFile();
 
+  // Syncing RTC module to NTP server if RTC module lost power
   if (rtc.lostPower())
   {
     syncRTCtoNTP();
   }
 
+  // Setting up all tasks
   setupTasks();
 }
 
 void loop()
 {
+  // We delete loop tasks since it would block system
   vTaskDelete(NULL);
 }
 
+// Button Pressed Task
 void onButtonPressed(TimerHandle_t xTimer)
 {
-  int buttonState = digitalRead(BUTTON_RESET_PIN);
   resetESP();
 }
 

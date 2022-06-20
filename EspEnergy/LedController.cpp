@@ -36,6 +36,7 @@ void setRgbColor(int red_light_value, int green_light_value, int blue_light_valu
     digitalWrite(BLUE_LIGHT_PIN, blue_light_value);
 } 
 
+// Led Controller Task
 void ledTask(void * parameter){
   setupLed();
   for(;;){
